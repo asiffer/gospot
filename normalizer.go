@@ -1,4 +1,5 @@
 // normalizer.go
+
 package gospot
 
 import (
@@ -6,6 +7,8 @@ import (
 	"math"
 )
 
+// Normalizer is a Ubend-like container which also computes the
+// mean and std of the data it stores.
 type Normalizer struct {
 	ubend  *Ubend
 	center bool
@@ -40,7 +43,7 @@ func (n *Normalizer) Average() float64 {
 // It then stores x to update
 func (n *Normalizer) Step(x float64) (float64, error) {
 	if n.ubend.IsFull() {
-		var z float64 = x
+		var z = x
 		if n.center {
 			z = z - n.ubend.Mean()
 		}
@@ -49,10 +52,9 @@ func (n *Normalizer) Step(x float64) (float64, error) {
 		}
 		n.ubend.Push(x)
 		return z, nil
-	} else {
-		n.ubend.Push(x)
-		return math.NaN(), errors.New("The depth is not reached yet")
 	}
+	n.ubend.Push(x)
+	return math.NaN(), errors.New("The depth is not reached yet")
 }
 
 // Cancel removes the last step only

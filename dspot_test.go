@@ -3,125 +3,156 @@ package gospot
 
 import (
 	"fmt"
-	"strings"
+	"math"
 	"testing"
 )
 
-var (
-	HEADER_WIDTH int    = 100
-	HEADER_SYM   string = "="
-)
-
-func title(s string) {
-	var l int = len(s)
-	var border int
-	var left string
-	var right string
-	remaining := HEADER_WIDTH - l - 2
-	if remaining%2 == 0 {
-		border = remaining / 2
-		left = strings.Repeat(HEADER_SYM, border) + " "
-		right = " " + strings.Repeat(HEADER_SYM, border)
-	} else {
-		border = (remaining - 1) / 2
-		left = strings.Repeat(HEADER_SYM, border+1) + " "
-		right = " " + strings.Repeat(HEADER_SYM, border)
-	}
-
-	fmt.Println(left + s + right)
-}
-
-func TestDSpot(t *testing.T) {
-	title("DSPOT")
-}
-
 func TestInitAndRunDSpot(t *testing.T) {
-	fmt.Println("** Testing initialization and run **")
+	title("Testing DSpot initialization and run")
 	// init spot object
-	var depth int = 50
-	var q float64 = 1e-4
-	var n_init int32 = 2000
-	var level float64 = 0.99
+	var depth = 50
+	var q = 1e-4
+	var nInit int32 = 2000
+	var level = 0.99
 	up, down, alert, bounded := true, true, true, true
-	var max_excess int32 = 200
+	var maxExcess int32 = 200
 
-	dspot := NewDSpot(depth, q, n_init, level, up, down, alert, bounded, max_excess)
+	checkTitle("Building DSpot...")
+	dspot := NewDSpot(
+		depth,
+		q,
+		nInit,
+		level,
+		up,
+		down,
+		alert,
+		bounded,
+		maxExcess)
+	testOK()
+
 	// data
-	var N int = 10000
+	var N = 10000
 	data := gaussianSample(N)
 
+	checkTitle("Feeding...")
 	for i := 0; i < N; i++ {
 		dspot.Step(data[i])
 	}
+	testOK()
 
+	checkTitle("Deleting...")
 	dspot.Delete()
+	testOK()
 }
 
 func TestDriftComputation(t *testing.T) {
-	fmt.Println("** Testing drift computation **")
-	// init spot object
-	var depth int = 500
-	var q float64 = 1e-4
-	var n_init int32 = 2000
-	var level float64 = 0.99
-	up, down, alert, bounded := true, true, true, true
-	var max_excess int32 = 200
+	title("Testing drift computation")
+	// init dspot object
 
-	dspot := NewDSpot(depth, q, n_init, level, up, down, alert, bounded, max_excess)
+	config := DSpotConfig{
+		SpotConfig{
+			Q:         1e-4,
+			Ninit:     2000,
+			Level:     0.99,
+			Up:        true,
+			Down:      true,
+			Alert:     true,
+			Bounded:   true,
+			MaxExcess: 200,
+		},
+		500,
+	}
+	dspot := NewDSpotFromConfig(config)
 
 	// data
-	var drift float64 = 10.0
-	var N int = 10000
+	var drift = 10.0
+	var N = 10000
 	data := gaussianSample(N)
 
 	for i := 0; i < N; i++ {
 		dspot.Step(data[i] + drift)
 	}
 
-	fmt.Printf("Drift: %.3f (expected: %.3f)\n", dspot.Average(), drift)
-	dspot.Delete()
-}
-
-func TestDSpotStatus(t *testing.T) {
-	fmt.Println("** Testing status **")
-	// init spot object
-	var depth int = 500
-	var q float64 = 1e-3
-	var n_init int32 = 2000
-	var level float64 = 0.99
-	up, down, alert, bounded := true, true, true, true
-	var max_excess int32 = 200
-
-	dspot := NewDSpot(depth, q, n_init, level, up, down, alert, bounded, max_excess)
-
-	// data
-	var drift float64 = -7.0
-	var N int = 12000
-	data := gaussianSample(N)
-
-	for i := 0; i < N; i++ {
-		dspot.Step(data[i] + drift)
+	checkTitle("Checking drift...")
+	err := math.Abs(dspot.Average()-drift) / drift
+	if err > 5. {
+		testERROR()
+		t.Errorf("Drift: %.3f (expected: %.3f)\n", dspot.Average(), drift)
+	} else if err > 2.5 {
+		testWARNING()
+	} else {
+		testOK()
 	}
 
-	fmt.Println(dspot.Status())
 	dspot.Delete()
 }
+
+// func TestDSpotStatus(t *testing.T) {
+// 	title("Testing DSpot status")
+// 	// init spot object
+// 	var depth = 500
+// 	var q = 1e-3
+// 	var nInit int32 = 2000
+// 	var level = 0.99
+// 	up, down, alert, bounded := true, true, false, true
+// 	var maxExcess int32 = 200
+
+// 	dspot := NewDSpot(
+// 		depth,
+// 		q,
+// 		nInit,
+// 		level,
+// 		up,
+// 		down,
+// 		alert,
+// 		bounded,
+// 		maxExcess)
+
+// 	// data
+// 	var drift = -7.0
+// 	var N = 12000
+// 	data := gaussianSample(N)
+
+// 	for i := 0; i < N; i++ {
+// 		dspot.Step(data[i] + drift)
+// 	}
+
+// 	fmt.Println(dspot.Status())
+// 	dspot.Delete()
+// }
 
 func TestNullDepth(t *testing.T) {
-	fmt.Println("** Testing null depth **")
+	title("Testing null depth")
 	// init spot object
-	var depth int = 0
-	var q float64 = 1e-3
-	var n_init int32 = 2000
-	var level float64 = 0.99
+	var depth = 0
+	var q = 1e-3
+	var nInit int32 = 2000
+	var level = 0.99
 	up, down, alert, bounded := true, true, true, true
-	var max_excess int32 = 200
+	var maxExcess int32 = 200
 
-	dspot := NewDSpot(depth, q, n_init, level, up, down, alert, bounded, max_excess)
-	spot := NewSpot(q, n_init, level, up, down, alert, bounded, max_excess)
+	dspot := NewDSpot(
+		depth,
+		q,
+		nInit,
+		level,
+		up,
+		down,
+		alert,
+		bounded,
+		maxExcess)
+	spot := NewSpot(
+		q,
+		nInit,
+		level,
+		up,
+		down,
+		alert,
+		bounded,
+		maxExcess)
+
 	// data
-
-	var N int = 7000
+	var N = 7000
 	data := gaussianSample(N)
 
 	for i := 0; i < N; i++ {
@@ -129,13 +160,145 @@ func TestNullDepth(t *testing.T) {
 		spot.Step(data[i])
 	}
 
-	fmt.Print("-- DSPOT --\n", dspot.Status(), "\n")
-	fmt.Print("-- SPOT --\n", spot.Status(), "\n")
-
+	checkTitle("Checking Spot/DSpot status...")
 	if dspot.Status().SpotStatus != spot.Status() {
 		t.Error("Different status")
+		testERROR()
+		fmt.Print("\n-- DSPOT --\n", dspot.Status(), "\n")
+		fmt.Print("-- SPOT --\n", spot.Status(), "\n")
+	} else {
+		testOK()
 	}
 
 	spot.Delete()
 	dspot.Delete()
+}
+
+func TestDBasicDSpotAccess(t *testing.T) {
+	title("Testing DSpot status accesses")
+
+	config := DSpotConfig{
+		SpotConfig{
+			Q:         1e-4,
+			Ninit:     2000,
+			Level:     0.99,
+			Up:        true,
+			Down:      true,
+			Alert:     true,
+			Bounded:   true,
+			MaxExcess: 200,
+		},
+		500,
+	}
+	dspot := NewDSpotFromConfig(config)
+
+	N := 2 * int(config.Ninit)
+
+	data := gaussianSample(N)
+
+	for i := 0; i < N; i++ {
+		dspot.Step(data[i])
+	}
+
+	checkTitle("Checking TUp/TDown...")
+	errTUp := math.Abs(dspot.GetUpperT()-dspot.Average()-2.326) / 2.326
+	errTDown := math.Abs(dspot.GetLowerT()-dspot.Average()+2.326) / 2.326
+	if errTUp > 5 || errTDown > 5 {
+		t.Error("Error on the TUp/TDown values")
+		fmt.Println(dspot.Status())
+		testERROR()
+	} else if errTUp > 2.5 || errTDown > 2.5 {
+		testWARNING()
+	} else {
+		testOK()
+	}
+
+	checkTitle("Checking ZUp/ZDown...")
+	errZUp := math.Abs(dspot.GetUpperThreshold()-dspot.Average()-3.719) / 3.719
+	errZDown := math.Abs(dspot.GetLowerThreshold()-dspot.Average()+3.719) / 3.719
+	if errZUp > 5 || errZDown > 5 {
+		t.Error("Error on the TUp/TDown values")
+		fmt.Println("\n", dspot.Status())
+		testERROR()
+	} else if errZUp > 2.5 || errZDown > 2.5 {
+		testWARNING()
+	} else {
+		testOK()
+	}
+}
+
+func TestDSpotProbabilityComputation(t *testing.T) {
+	title("Probability computation")
+
+	config := DSpotConfig{
+		SpotConfig{
+			Q:         1e-4,
+			Ninit:     2000,
+			Level:     0.99,
+			Up:        true,
+			Down:      true,
+			Alert:     true,
+			Bounded:   true,
+			MaxExcess: 200,
+		},
+		500,
+	}
+	dspot := NewDSpotFromConfig(config)
+	N := int(config.Ninit)
+	data := gaussianSample(N)
+	drift := 7.0
+
+	for i := 0; i < N; i++ {
+		dspot.Step(data[i] + drift)
+	}
+
+	checkTitle("Checking Up probability computation...")
+	errUp := math.Abs(dspot.UpProbability(3.09+dspot.Average())-1e-3) / 1e-3
+	if errUp > 5 {
+		testERROR()
+		t.Errorf("Expected 1e-3, got %f", dspot.UpProbability(3.09+dspot.Average()))
+	} else if errUp > 2.5 {
+		testWARNING()
+	} else {
+		testOK()
+	}
+
+	checkTitle("Checking Down probability computation...")
+	errDown := math.Abs(dspot.DownProbability(-3.09+dspot.Average())-1e-3) / 1e-3
+	if errDown > 5 {
+		testERROR()
+		t.Errorf("Expected 1e-3, got %f", dspot.DownProbability(-3.09+dspot.Average()))
+	} else if errDown > 2.5 {
+		testWARNING()
+	} else {
+		testOK()
+	}
+
+	config = DSpotConfig{
+		SpotConfig{
+			Q:         1e-4,
+			Ninit:     2000,
+			Level:     0.99,
+			Up:        false,
+			Down:      false,
+			Alert:     true,
+			Bounded:   true,
+			MaxExcess: 200,
+		},
+		500,
+	}
+	dspot = NewDSpotFromConfig(config)
+	checkTitle("Checking NaN (Up)...")
+	if !math.IsNaN(dspot.UpProbability(12.)) {
+		testERROR()
+	} else {
+		testOK()
+	}
+
+	checkTitle("Checking NaN (Down)...")
+	if !math.IsNaN(dspot.DownProbability(-12.)) {
+		testERROR()
+	} else {
+		testOK()
+	}
 }

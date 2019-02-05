@@ -11,22 +11,30 @@ type DSpot struct {
 	Spot
 }
 
-// NewDSpot Constructor
-func NewDSpot(depth int, q float64, n_init int32, level float64, up bool, down bool, alert bool, bounded bool, max_excess int32) *DSpot {
-	up_u8 := bool2uint8(up)
-	down_u8 := bool2uint8(down)
-	alert_u8 := bool2uint8(alert)
-	bounded_u8 := bool2uint8(bounded)
+// NewDSpot is the DSpot constructor
+func NewDSpot(depth int, q float64, nInit int32,
+	level float64, up bool, down bool,
+	alert bool, bounded bool, maxExcess int32) *DSpot {
+
+	up8 := bool2uint8(up)
+	down8 := bool2uint8(down)
+	alert8 := bool2uint8(alert)
+	bounded8 := bool2uint8(bounded)
+
 	return &DSpot{normalizer: NewNormalizer(depth, true, false),
-		Spot: Spot{ptr: spot_new(q, n_init, level, up_u8, down_u8, alert_u8, bounded_u8, max_excess),
+		Spot: Spot{
+			ptr: spotNew(q, nInit, level, up8,
+				down8, alert8, bounded8, maxExcess),
 			Up:   up,
 			Down: down}}
 }
 
+// NewDSpotFromConfig creates a DSpot instance from a config structure
 func NewDSpotFromConfig(dsc DSpotConfig) *DSpot {
-	return NewDSpot(dsc.Depth, dsc.Q, dsc.N_init, dsc.Level, dsc.Up, dsc.Down, dsc.Alert, dsc.Bounded, dsc.Max_excess)
+	return NewDSpot(dsc.Depth, dsc.Q, dsc.Ninit, dsc.Level, dsc.Up, dsc.Down, dsc.Alert, dsc.Bounded, dsc.MaxExcess)
 }
 
+// NewDefaultDSpot is the default DSpot constructor
 func NewDefaultDSpot() *DSpot {
 	return NewDSpotFromConfig(DefaultDSpotConfig)
 }
@@ -36,21 +44,23 @@ func (ds *DSpot) Average() float64 {
 	return ds.normalizer.Average()
 }
 
+// Config returns the initial config of the DSpot instance
 func (ds *DSpot) Config() DSpotConfig {
 	return DSpotConfig{Depth: ds.normalizer.Depth(), SpotConfig: ds.Spot.Config()}
 }
 
+// Status returns the current status of the DSpot instance
 func (ds *DSpot) Status() DSpotStatus {
 	status := ds.Spot.Status()
 	mean := ds.Average()
 	if ds.Down {
-		status.T_down += mean
-		status.Z_down += mean
+		status.TDown += mean
+		status.ZDown += mean
 	}
 
 	if ds.Up {
-		status.T_up += mean
-		status.Z_up += mean
+		status.TUp += mean
+		status.ZUp += mean
 	}
 
 	return DSpotStatus{Mean: mean, SpotStatus: status}
@@ -66,45 +76,42 @@ func (ds *DSpot) Step(x float64) int32 {
 			ds.normalizer.Cancel()
 		}
 		return ret
-	} else {
-		return 5
 	}
+	// error code
+	return 5
 }
 
 // GetUpperT Returns the upper threshold t
 func (ds *DSpot) GetUpperT() float64 {
 	if ds.Up {
 		return ds.Average() + ds.Spot.GetUpperT()
-	} else {
-		return math.NaN()
 	}
+	return math.NaN()
+
 }
 
-// GetUpperT Returns the lower threshold t
+// GetLowerT returns the lower threshold t
 func (ds *DSpot) GetLowerT() float64 {
 	if ds.Down {
 		return ds.Average() + ds.Spot.GetLowerT()
-	} else {
-		return math.NaN()
 	}
+	return math.NaN()
 }
 
-// GetUpperT Returns the upper decision threshold
+// GetUpperThreshold returns the upper decision threshold
 func (ds *DSpot) GetUpperThreshold() float64 {
 	if ds.Up {
 		return ds.Average() + ds.Spot.GetUpperThreshold()
-	} else {
-		return math.NaN()
 	}
+	return math.NaN()
 }
 
-// GetUpperT Returns the lower decision threshold
+// GetLowerThreshold returns the lower decision threshold
 func (ds *DSpot) GetLowerThreshold() float64 {
 	if ds.Down {
 		return ds.Average() + ds.Spot.GetLowerThreshold()
-	} else {
-		return math.NaN()
 	}
+	return math.NaN()
 }
 
 // UpProbability Given a quantile z, computes the probability
@@ -112,9 +119,8 @@ func (ds *DSpot) GetLowerThreshold() float64 {
 func (ds *DSpot) UpProbability(z float64) float64 {
 	if ds.Up {
 		return ds.Spot.UpProbability(z - ds.Average())
-	} else {
-		return math.NaN()
 	}
+	return math.NaN()
 }
 
 // DownProbability Given a quantile z, computes the probability
@@ -122,7 +128,6 @@ func (ds *DSpot) UpProbability(z float64) float64 {
 func (ds *DSpot) DownProbability(z float64) float64 {
 	if ds.Down {
 		return ds.Spot.DownProbability(z - ds.Average())
-	} else {
-		return math.NaN()
 	}
+	return math.NaN()
 }

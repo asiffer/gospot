@@ -2,37 +2,42 @@
 package gospot
 
 import (
-	"fmt"
 	"math/rand"
 	"testing"
 )
 
-func TestNormalizer(t *testing.T) {
-	title("NORMALIZER")
-}
 func TestNormalizerFeed(t *testing.T) {
-	fmt.Println("** Testing feeding normalizer **")
+	title("Testing feeding normalizer")
 	// var z float64
 	var err error
 	depth := 10
 	normalizer := NewNormalizer(depth, true, false)
+
+	checkTitle("Checking transitory steps...")
 	for i := 0; i < depth; i++ {
 		_, err = normalizer.Step(rand.Float64())
 		if err == nil {
 			t.Error("Error in transitory steps")
+			testERROR()
+			return
 		}
 	}
+	testOK()
 
+	checkTitle("Checking cruising steps...")
 	for i := 0; i < depth; i++ {
 		_, err = normalizer.Step(rand.Float64())
 		if err != nil {
 			t.Error("Error in cruising steps")
+			testERROR()
+			return
 		}
 	}
+	testOK()
 }
 
 func TestCentering(t *testing.T) {
-	fmt.Println("** Testing centering **")
+	title("Testing centering")
 	var z float64
 	// var err error
 	depth := 10
@@ -42,16 +47,20 @@ func TestCentering(t *testing.T) {
 		normalizer.Step(val)
 	}
 
+	checkTitle("Checking centered value...")
 	for i := 0; i < 2*depth; i++ {
 		z, _ = normalizer.Step(val)
 		if z != 0.0 {
 			t.Error("Error while centering")
+			testERROR()
+			return
 		}
 	}
+	testOK()
 }
 
 func TestScaling(t *testing.T) {
-	fmt.Println("** Testing scaling **")
+	title("Testing scaling")
 	var z float64
 	depth := 20
 
@@ -64,7 +73,11 @@ func TestScaling(t *testing.T) {
 	}
 
 	z, _ = normalizer.Step(17.0)
+	checkTitle("Checking scaled value...")
 	if z != 16.0 {
 		t.Error("Error while scaling")
+		testERROR()
+	} else {
+		testOK()
 	}
 }

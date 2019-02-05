@@ -1,25 +1,25 @@
 // spot.go
+
 package gospot
 
 import "C"
 
 import (
-	"errors"
 	"fmt"
-    "math"
+	"math"
 )
 
 var (
-	spot_new               func(float64, int32, float64, uint8, uint8, uint8, uint8, int32) uintptr
-	spot_delete            func(uintptr)
-	spot_step              func(uintptr, float64) int32
-	spot_getUpperThreshold func(uintptr) float64
-	spot_getLowerThreshold func(uintptr) float64
-	spot_getUpper_t        func(uintptr) float64
-	spot_getLower_t        func(uintptr) float64
-	spot_set_q             func(uintptr, float64)
-	spot_up_probability    func(uintptr, float64) float64
-	spot_down_probability  func(uintptr, float64) float64
+	spotNew               func(float64, int32, float64, uint8, uint8, uint8, uint8, int32) uintptr
+	spotDelete            func(uintptr)
+	spotStep              func(uintptr, float64) int32
+	spotGetUpperThreshold func(uintptr) float64
+	spotGetLowerThreshold func(uintptr) float64
+	spotGetUpperT         func(uintptr) float64
+	spotGetLowerT         func(uintptr) float64
+	spotSetQ              func(uintptr, float64)
+	spotUpProbability     func(uintptr, float64) float64
+	spotDownProbability   func(uintptr, float64) float64
 )
 
 // LoadSymbolsSpot It loads the symbols related to the Spot object from
@@ -27,45 +27,45 @@ var (
 // pointer otherwise
 func LoadSymbolsSpot() error {
 	var err error
-	err = libspot.Sym("Spot_new", &spot_new)
+	err = libspot.Sym("Spot_new", &spotNew)
 	if err != nil {
-		return errors.New(fmt.Sprintf("Error in loading Spot_new (%s)", err.Error()))
+		return fmt.Errorf("Error in loading Spot_new (%s)", err.Error())
 	}
-	err = libspot.Sym("Spot_delete", &spot_delete)
+	err = libspot.Sym("Spot_delete", &spotDelete)
 	if err != nil {
-		return errors.New(fmt.Sprintf("Error in loading Spot_delete (%s)", err.Error()))
+		return fmt.Errorf("Error in loading Spot_delete (%s)", err.Error())
 	}
-	err = libspot.Sym("Spot_step", &spot_step)
+	err = libspot.Sym("Spot_step", &spotStep)
 	if err != nil {
-		return errors.New(fmt.Sprintf("Error in loading Spot_step (%s)", err.Error()))
+		return fmt.Errorf("Error in loading Spot_step (%s)", err.Error())
 	}
-	err = libspot.Sym("Spot_getUpperThreshold", &spot_getUpperThreshold)
+	err = libspot.Sym("Spot_getUpperThreshold", &spotGetUpperThreshold)
 	if err != nil {
-		return errors.New(fmt.Sprintf("Error in loading Spot_getUpperThreshold (%s)", err.Error()))
+		return fmt.Errorf("Error in loading Spot_getUpperThreshold (%s)", err.Error())
 	}
-	err = libspot.Sym("Spot_getLowerThreshold", &spot_getLowerThreshold)
+	err = libspot.Sym("Spot_getLowerThreshold", &spotGetLowerThreshold)
 	if err != nil {
-		return errors.New(fmt.Sprintf("Error in loading Spot_getLowerThreshold (%s)", err.Error()))
+		return fmt.Errorf("Error in loading Spot_getLowerThreshold (%s)", err.Error())
 	}
-	err = libspot.Sym("Spot_getUpper_t", &spot_getUpper_t)
+	err = libspot.Sym("Spot_getUpper_t", &spotGetUpperT)
 	if err != nil {
-		return errors.New(fmt.Sprintf("Error in loading Spot_getUpper_t (%s)", err.Error()))
+		return fmt.Errorf("Error in loading Spot_getUpper_t (%s)", err.Error())
 	}
-	err = libspot.Sym("Spot_getLower_t", &spot_getLower_t)
+	err = libspot.Sym("Spot_getLower_t", &spotGetLowerT)
 	if err != nil {
-		return errors.New(fmt.Sprintf("Error in loading Spot_getLower_t (%s)", err.Error()))
+		return fmt.Errorf("Error in loading Spot_getLower_t (%s)", err.Error())
 	}
-	err = libspot.Sym("Spot_set_q", &spot_set_q)
+	err = libspot.Sym("Spot_set_q", &spotSetQ)
 	if err != nil {
-		return errors.New(fmt.Sprintf("Error in loading Spot_set_q (%s)", err.Error()))
+		return fmt.Errorf("Error in loading Spot_set_q (%s)", err.Error())
 	}
-	err = libspot.Sym("Spot_up_probability", &spot_up_probability)
+	err = libspot.Sym("Spot_up_probability", &spotUpProbability)
 	if err != nil {
-		return errors.New(fmt.Sprintf("Error in loading Spot_up_probability (%s)", err.Error()))
+		return fmt.Errorf("Error in loading Spot_up_probability (%s)", err.Error())
 	}
-	err = libspot.Sym("Spot_down_probability", &spot_down_probability)
+	err = libspot.Sym("Spot_down_probability", &spotDownProbability)
 	if err != nil {
-		return errors.New(fmt.Sprintf("Error in loading Spot_down_probability (%s)", err.Error()))
+		return fmt.Errorf("Error in loading Spot_down_probability (%s)", err.Error())
 	}
 	return nil
 }
@@ -75,126 +75,130 @@ type Spot struct {
 	// ptr pointer to Spot instance
 	ptr uintptr
 	// up/down flag
-	Up bool
+	Up   bool
 	Down bool
 }
 
+// NewDefaultSpot is the default constructor of a Spot object
 func NewDefaultSpot() *Spot {
 	return NewSpotFromConfig(DefaultSpotConfig)
 }
 
-// NewSpot Constructor
-func NewSpot(q float64, n_init int32, level float64, up bool, down bool, alert bool, bounded bool, max_excess int32) *Spot {
-	up_u8 := bool2uint8(up)
-	down_u8 := bool2uint8(down)
-	alert_u8 := bool2uint8(alert)
-	bounded_u8 := bool2uint8(bounded)
-	return &Spot{ptr: spot_new(q, n_init, level, up_u8, down_u8, alert_u8, bounded_u8, max_excess), Up: up, Down: down}
+// NewSpot is the Spot constructor
+func NewSpot(q float64, nInit int32, level float64, up bool, down bool, alert bool, bounded bool, maxExcess int32) *Spot {
+	up8 := bool2uint8(up)
+	down8 := bool2uint8(down)
+	alert8 := bool2uint8(alert)
+	bounded8 := bool2uint8(bounded)
+	return &Spot{ptr: spotNew(q, nInit, level, up8, down8, alert8, bounded8, maxExcess), Up: up, Down: down}
 }
 
+// NewSpotFromConfig creates a Spot instance from a config structure
 func NewSpotFromConfig(sc SpotConfig) *Spot {
-	return NewSpot(sc.Q, sc.N_init, sc.Level, sc.Up, sc.Down, sc.Alert, sc.Bounded, sc.Max_excess)
+	return NewSpot(sc.Q, sc.Ninit, sc.Level, sc.Up, sc.Down, sc.Alert, sc.Bounded, sc.MaxExcess)
 }
 
 // Delete Destructor
 func (s *Spot) Delete() {
-	spot_delete(s.ptr)
+	spotDelete(s.ptr)
 }
 
 // Step Method which update the Spot instance according to a new incoming value
 func (s *Spot) Step(x float64) int32 {
-	return spot_step(s.ptr, x)
+	return spotStep(s.ptr, x)
 }
 
 // GetUpperT Returns the upper threshold t
 func (s *Spot) GetUpperT() float64 {
-    if s.Up {
-		return spot_getUpper_t(s.ptr)
-    } else {
-        return math.NaN()
-    }
+	if s.Up {
+		return spotGetUpperT(s.ptr)
+	}
+	return math.NaN()
+
 }
 
-// GetUpperT Returns the lower threshold t
+// GetLowerT Returns the lower threshold t
 func (s *Spot) GetLowerT() float64 {
-    if s.Down {
-		return spot_getLower_t(s.ptr)
-    } else {
-        return math.NaN()
-    }
+	if s.Down {
+		return spotGetLowerT(s.ptr)
+	}
+	return math.NaN()
+
 }
 
-// GetUpperT Returns the upper decision threshold
+// GetUpperThreshold returns the upper decision threshold
 func (s *Spot) GetUpperThreshold() float64 {
-    if s.Up {
-		return spot_getUpperThreshold(s.ptr)
-    } else {
-        return math.NaN()
-    }
+	if s.Up {
+		return spotGetUpperThreshold(s.ptr)
+	}
+	return math.NaN()
+
 }
 
-// GetUpperT Returns the lower decision threshold
+// GetLowerThreshold returns the lower decision threshold
 func (s *Spot) GetLowerThreshold() float64 {
-    if s.Down {
-		return spot_getLowerThreshold(s.ptr)
-    } else {
-        return math.NaN()
-    }
+	if s.Down {
+		return spotGetLowerThreshold(s.ptr)
+	}
+	return math.NaN()
+
 }
 
 // SetQ Change the value of the decision probability.
 // It then changes the decision thresholds
 func (s *Spot) SetQ(q float64) {
-	spot_set_q(s.ptr, q)
+	spotSetQ(s.ptr, q)
 }
 
 // UpProbability Given a quantile z, computes the probability
-// to observe a value higher than z
+// to observe a value greater than z
 func (s *Spot) UpProbability(z float64) float64 {
-    if s.Up {
-		return spot_up_probability(s.ptr, z)
-    } else {
-        return math.NaN()
-    }
+	if s.Up {
+		return spotUpProbability(s.ptr, z)
+	}
+	return math.NaN()
+
 }
 
 // DownProbability Given a quantile z, computes the probability
 // to observe a value lower than z
 func (s *Spot) DownProbability(z float64) float64 {
-    if s.Down {
-		return spot_down_probability(s.ptr, z)
-    } else {
-        return math.NaN()
-    }
+	if s.Down {
+		return spotDownProbability(s.ptr, z)
+	}
+	return math.NaN()
+
 }
 
+// Status returns the current status of the Spot instance
 func (s *Spot) Status() SpotStatus {
-	status_ptr := spot_status_new(s.ptr)
-	defer spot_status_delete(status_ptr)
+	statusPtr := spotStatusNew(s.ptr)
+	defer spotStatusDelete(statusPtr)
 	return SpotStatus{
-		N:       status_get_n(status_ptr),
-		Ex_up:   status_get_ex_up(status_ptr),
-		Ex_down: status_get_ex_down(status_ptr),
-		Nt_up:   status_get_Nt_up(status_ptr),
-		Nt_down: status_get_Nt_down(status_ptr),
-		Al_up:   status_get_al_up(status_ptr),
-		Al_down: status_get_al_down(status_ptr),
-		T_up:    status_get_t_up(status_ptr),
-		T_down:  status_get_t_down(status_ptr),
-		Z_up:    status_get_z_up(status_ptr),
-		Z_down:  status_get_z_down(status_ptr)}
+		N:      statusGetN(statusPtr),
+		ExUp:   statusGetExUp(statusPtr),
+		ExDown: statusGetExDown(statusPtr),
+		NtUp:   statusGetNtUp(statusPtr),
+		NtDown: statusGetNtDown(statusPtr),
+		AlUp:   statusGetAlUp(statusPtr),
+		AlDown: statusGetAlDown(statusPtr),
+		TUp:    statusGetTUp(statusPtr),
+		TDown:  statusGetTDown(statusPtr),
+		ZUp:    statusGetZUp(statusPtr),
+		ZDown:  statusGetZDown(statusPtr)}
 }
 
+// Config returns the configuration of the Spot instance
 func (s *Spot) Config() SpotConfig {
-	config_ptr := spot_config_new(s.ptr)
-	defer spot_config_delete(config_ptr)
+	configPtr := spotConfigNew(s.ptr)
+	defer spotConfigDelete(configPtr)
 	return SpotConfig{
-		Q:          config_get_q(config_ptr),
-		N_init:     config_get_n_init(config_ptr),
-		Level:      config_get_level(config_ptr),
-		Up:         config_get_up(config_ptr) == 1,
-		Down:       config_get_down(config_ptr) == 1,
-		Alert:      config_get_alert(config_ptr) == 1,
-		Bounded:    config_get_bounded(config_ptr) == 1,
-		Max_excess: config_get_max_excess(config_ptr)}
+		Q:         configGetQ(configPtr),
+		Ninit:     configGetNinit(configPtr),
+		Level:     configGetLevel(configPtr),
+		Up:        configGetUp(configPtr) == 1,
+		Down:      configGetDown(configPtr) == 1,
+		Alert:     configGetAlert(configPtr) == 1,
+		Bounded:   configGetBounded(configPtr) == 1,
+		MaxExcess: configGetMaxExcess(configPtr)}
 }

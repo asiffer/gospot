@@ -1,4 +1,5 @@
 // ubend.go
+
 package gospot
 
 import "math"
