@@ -7,7 +7,7 @@ go:
 - master
 
 before_install:
-- sudo add-apt-repository ppa:asiffer/libspot
+- sudo add-apt-repository -y ppa:asiffer/libspot
 - sudo apt-get update
 - sudo apt-get install -y libspot
 - go get -v github.com/rainycape/dl
