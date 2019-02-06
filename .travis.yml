@@ -2,9 +2,8 @@ dist: xenial
 
 language: go
 
-go:
-- 1.11.x
-- master
+go: 1.11.x
+
 
 before_install:
 - sudo add-apt-repository -y ppa:asiffer/libspot
@@ -12,9 +11,14 @@ before_install:
 - sudo apt-get install -y libspot
 - go get -v github.com/rainycape/dl
 - go get -v github.com/rs/zerolog
+- go get -v github.com/modocache/gover
 
 script:
-  - go test -coverprofile=coverage.txt
+  - go test -v ./...
+  # Collect coverage reports
+  - go list -f '{{if len .TestGoFiles}}"go test -coverprofile={{.Dir}}/.coverprofile {{.ImportPath}}"{{end}}' ./... | xargs -i sh -c {}
+  # Merge coverage reports
+  - gover . coverprofile.txt
 
 after_success:
-  - bash <(curl -s https://codecov.io/bash)
+  - bash <(curl -s https://codecov.io/bash) -f coverprofile.txt

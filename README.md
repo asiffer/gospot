@@ -1,5 +1,9 @@
 # gospot
 
+[![Build Status](https://travis-ci.com/asiffer/gospot.svg?branch=master)](https://travis-ci.com/asiffer/gospot)
+
+[![Coverage Status](http://codecov.io/github/asiffer/gospot/coverage.svg?branch=master)](http://codecov.io/github/vendor/package?branch=master)
+
 `gospot` provides `Go` bindings to [libspot](https://asiffer.github.io/libspot/), a `C++` library to flag outliers in streaming data.
 
 In details, it uses [dl](https://github.com/rainycape/dl) to open and load the shared library. Initally, it looks possible to embed the `libspot` code into the `Go` package, however, as the native library uses modern `C++`, that is more difficult. 
