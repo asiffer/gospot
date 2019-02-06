@@ -3,7 +3,7 @@ dist: xenial
 language: go
 
 go: 
-  - master
+  - 1.11.5
 
 
 before_install:
