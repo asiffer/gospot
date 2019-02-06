@@ -109,4 +109,81 @@ func TestUbendMomentComputation(t *testing.T) {
 		testOK()
 	}
 
+	checkTitle("Checking std computation (cruising regime)...")
+	if ubend.Std() != 0 {
+		t.Error("Bad std computation in cruising regime")
+		testERROR()
+	} else {
+		testOK()
+	}
+
+}
+
+func TestUbendClear(t *testing.T) {
+	title("Testing Ubend clear")
+	size := 10
+	val := 1.0
+	ubend := NewUbend(size)
+
+	for i := 0; i < 10; i++ {
+		ubend.Push(val)
+	}
+
+	ubend.Clear()
+	checkTitle("Checking ID...")
+	if ubend.id != 0 {
+		testERROR()
+		t.Errorf("Expected 0, got %d", ubend.id)
+	} else {
+		testOK()
+	}
+
+	checkTitle("Checking sum...")
+	if ubend.m != 0. {
+		testERROR()
+		t.Errorf("Expected 0., got %f", ubend.m)
+	} else {
+		testOK()
+	}
+
+	checkTitle("Checking sum of squares...")
+	if ubend.m2 != 0. {
+		testERROR()
+		t.Errorf("Expected 0., got %f", ubend.m2)
+	} else {
+		testOK()
+	}
+
+	checkTitle("Checking container...")
+	if ubend.Length() != 0 {
+		testERROR()
+		t.Errorf("Expected 0, got %d", ubend.Size())
+	} else {
+		testOK()
+	}
+
+}
+
+func TestUbendCancel(t *testing.T) {
+	title("Testing Ubend cancel")
+
+	size := 10
+	val := 1.0
+	ubend := NewUbend(size)
+
+	for i := 0; i < size-1; i++ {
+		ubend.Push(val)
+	}
+
+	ubend.Push(17)
+	ubend.Cancel()
+
+	checkTitle("Checking sum...")
+	if ubend.m != 9. {
+		testERROR()
+		t.Errorf("Expected 9., got %f", ubend.m)
+	} else {
+		testOK()
+	}
+
 }

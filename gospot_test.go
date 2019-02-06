@@ -8,7 +8,7 @@ import (
 )
 
 var (
-	HeaderWidth = 100
+	HeaderWidth = 90
 	HeaderSym   = "="
 )
 
