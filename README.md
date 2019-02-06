@@ -1,4 +1,7 @@
-# gospot [![Build Status](https://travis-ci.com/asiffer/gospot.svg?branch=master)](https://travis-ci.com/asiffer/gospot) [![Coverage Status](http://codecov.io/github.com/asiffer/gospot/coverage.svg?branch=master)](http://codecov.io/github.com/asiffer/gospot?branch=master)
+# gospot [![Build Status](https://travis-ci.com/asiffer/gospot.svg?branch=master)](https://travis-ci.com/asiffer/gospot) 
+[![Coverage Status](http://codecov.io/github/asiffer/gospot/coverage.svg?branch=master)](http://codecov.io/github/asiffer/gospot?branch=master)
+
+[![Coverage Status](https://codecov.io/github/asiffer/gospot/coverage?branch=master)](https://codecov.io/github/asiffer/gospot/coverage?branch=master)
 
 `gospot` provides `Go` bindings to [libspot](https://asiffer.github.io/libspot/), a `C++` library to flag outliers in streaming data.
 
