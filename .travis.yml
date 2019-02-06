@@ -1,0 +1,20 @@
+language: go
+
+go:
+- 1.11.x
+- master
+
+before_install:
+- echo "deb http://ppa.launchpad.net/asiffer/libspot/ubuntu cosmic main" | sudo tee -a /etc/apt/sources.list.d/asiffer-ubuntu-libspot-cosmic.list
+- curl https://keyserver.ubuntu.com/pks/lookup\?op\=get\&search\=0x76F580E5B58944D9 | sudo apt-key add -
+- sudo apt-get update
+- sudo apt-get install libspot
+- go get -v github.com/rainycape/dl
+- go get -v github.com/rs/zerolog
+
+script:
+  - go test -race -coverprofile=coverage.txt
+
+after_success:
+  - bash <(curl -s https://codecov.io/bash)
+
