@@ -55,62 +55,32 @@ var (
 	statusGetZDown   func(uintptr) float64
 )
 
+var statusSymbols = map[string]interface{}{
+	"Spot_status_ptr":     &spotStatusNew,
+	"Spot_status_delete":  &spotStatusDelete,
+	"_status_get_n":       &statusGetN,
+	"_status_get_ex_up":   &statusGetExUp,
+	"_status_get_ex_down": &statusGetExDown,
+	"_status_get_Nt_up":   &statusGetNtUp,
+	"_status_get_Nt_down": &statusGetNtDown,
+	"_status_get_al_up":   &statusGetAlUp,
+	"_status_get_al_down": &statusGetAlDown,
+	"_status_get_t_up":    &statusGetTUp,
+	"_status_get_t_down":  &statusGetTDown,
+	"_status_get_z_up":    &statusGetZUp,
+	"_status_get_z_down":  &statusGetZDown,
+}
+
 // LoadSymbolsStatus It loads the symbols related to the SpotStatus object
 // from the C++ library libspot. It returns an error if a loading fails, nil
 // pointer otherwise
 func LoadSymbolsStatus() error {
 	var err error
-	err = libspot.Sym("Spot_status_ptr", &spotStatusNew)
-	if err != nil {
-		return fmt.Errorf("Error in loading Spot_status_ptr(%s)", err.Error())
-	}
-	err = libspot.Sym("Spot_status_delete", &spotStatusDelete)
-	if err != nil {
-		return fmt.Errorf("Error in loading Spot_status_delete (%s)", err.Error())
-	}
-	err = libspot.Sym("_status_get_n", &statusGetN)
-	if err != nil {
-		return fmt.Errorf("Error in loading statusGetn (%s)", err.Error())
-	}
-	err = libspot.Sym("_status_get_ex_up", &statusGetExUp)
-	if err != nil {
-		return fmt.Errorf("Error in loading statusGetex_up (%s)", err.Error())
-	}
-	err = libspot.Sym("_status_get_ex_down", &statusGetExDown)
-	if err != nil {
-		return fmt.Errorf("Error in loading statusGetex_down (%s)", err.Error())
-	}
-	err = libspot.Sym("_status_get_Nt_up", &statusGetNtUp)
-	if err != nil {
-		return fmt.Errorf("Error in loading statusGetNt_up (%s)", err.Error())
-	}
-	err = libspot.Sym("_status_get_Nt_down", &statusGetNtDown)
-	if err != nil {
-		return fmt.Errorf("Error in loading statusGetNt_down (%s)", err.Error())
-	}
-	err = libspot.Sym("_status_get_al_up", &statusGetAlUp)
-	if err != nil {
-		return fmt.Errorf("Error in loading statusGetal_up (%s)", err.Error())
-	}
-	err = libspot.Sym("_status_get_al_down", &statusGetAlDown)
-	if err != nil {
-		return fmt.Errorf("Error in loading statusGetal_down (%s)", err.Error())
-	}
-	err = libspot.Sym("_status_get_t_up", &statusGetTUp)
-	if err != nil {
-		return fmt.Errorf("Error in loading statusGett_up (%s)", err.Error())
-	}
-	err = libspot.Sym("_status_get_t_down", &statusGetTDown)
-	if err != nil {
-		return fmt.Errorf("Error in loading statusGett_down (%s)", err.Error())
-	}
-	err = libspot.Sym("_status_get_z_up", &statusGetZUp)
-	if err != nil {
-		return fmt.Errorf("Error in loading statusGetz_up (%s)", err.Error())
-	}
-	err = libspot.Sym("_status_get_z_down", &statusGetZDown)
-	if err != nil {
-		return fmt.Errorf("Error in loading statusGetz_down (%s)", err.Error())
+	for k, f := range statusSymbols {
+		err = libspot.Sym(k, f)
+		if err != nil {
+			return fmt.Errorf("Error in loading %s (%s)", k, err.Error())
+		}
 	}
 	return nil
 }

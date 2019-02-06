@@ -104,6 +104,7 @@ func TestSpotStatus(t *testing.T) {
 	}
 
 	status := spot.Status()
+
 	checkTitle("Checking n...")
 	if status.N != int32(N) {
 		t.Error("Error on the number of observations")
@@ -323,16 +324,16 @@ func TestSpotProbabilityComputation(t *testing.T) {
 		MaxExcess: 200}
 	spot = NewSpotFromConfig(config)
 	checkTitle("Checking NaN (Up)...")
-	if !math.IsNaN(spot.UpProbability(12.)) {
-		testERROR()
-	} else {
+	if math.IsNaN(spot.UpProbability(12.)) && math.IsNaN(spot.GetUpperT()) && math.IsNaN(spot.GetUpperThreshold()) {
 		testOK()
+	} else {
+		testERROR()
 	}
 
 	checkTitle("Checking NaN (Down)...")
-	if !math.IsNaN(spot.DownProbability(-12.)) {
-		testERROR()
-	} else {
+	if math.IsNaN(spot.DownProbability(12.)) && math.IsNaN(spot.GetLowerT()) && math.IsNaN(spot.GetLowerThreshold()) {
 		testOK()
+	} else {
+		testERROR()
 	}
 }

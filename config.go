@@ -50,50 +50,29 @@ var (
 	DefaultDSpotConfig DSpotConfig
 )
 
+var configSymbols = map[string]interface{}{
+	"Spot_config_ptr":        &spotConfigNew,
+	"Spot_config_delete":     &spotConfigDelete,
+	"_config_get_q":          &configGetQ,
+	"_config_get_bounded":    &configGetBounded,
+	"_config_get_max_excess": &configGetMaxExcess,
+	"_config_get_alert":      &configGetAlert,
+	"_config_get_up":         &configGetUp,
+	"_config_get_down":       &configGetDown,
+	"_config_get_n_init":     &configGetNinit,
+	"_config_get_level":      &configGetLevel,
+}
+
 // LoadSymbolsConfig loads the symbols related to the SpotStatus object
 // from the C++ library libspot. It returns an error if a loading fails, nil
 // pointer otherwise
 func LoadSymbolsConfig() error {
 	var err error
-	err = libspot.Sym("Spot_config_ptr", &spotConfigNew)
-	if err != nil {
-		return fmt.Errorf("Error in loading SpotConfig_ptr(%s)", err.Error())
-	}
-	err = libspot.Sym("Spot_config_delete", &spotConfigDelete)
-	if err != nil {
-		return fmt.Errorf("Error in loading SpotConfigDelete (%s)", err.Error())
-	}
-	err = libspot.Sym("_config_get_q", &configGetQ)
-	if err != nil {
-		return fmt.Errorf("Error in loading configGetQ (%s)", err.Error())
-	}
-	err = libspot.Sym("_config_get_bounded", &configGetBounded)
-	if err != nil {
-		return fmt.Errorf("Error in loading configGetBounded (%s)", err.Error())
-	}
-	err = libspot.Sym("_config_get_max_excess", &configGetMaxExcess)
-	if err != nil {
-		return fmt.Errorf("Error in loading configGetMaxExcess (%s)", err.Error())
-	}
-	err = libspot.Sym("_config_get_alert", &configGetAlert)
-	if err != nil {
-		return fmt.Errorf("Error in loading configGetAlert (%s)", err.Error())
-	}
-	err = libspot.Sym("_config_get_up", &configGetUp)
-	if err != nil {
-		return fmt.Errorf("Error in loading configGetUp (%s)", err.Error())
-	}
-	err = libspot.Sym("_config_get_down", &configGetDown)
-	if err != nil {
-		return fmt.Errorf("Error in loading configGetDown (%s)", err.Error())
-	}
-	err = libspot.Sym("_config_get_n_init", &configGetNinit)
-	if err != nil {
-		return fmt.Errorf("Error in loading configGetNInit (%s)", err.Error())
-	}
-	err = libspot.Sym("_config_get_level", &configGetLevel)
-	if err != nil {
-		return fmt.Errorf("Error in loading configGetLevel (%s)", err.Error())
+	for k, f := range configSymbols {
+		err = libspot.Sym(k, f)
+		if err != nil {
+			return fmt.Errorf("Error in loading %s (%s)", k, err.Error())
+		}
 	}
 	return nil
 }

@@ -12,6 +12,13 @@ func TestNormalizerFeed(t *testing.T) {
 	var err error
 	depth := 10
 	normalizer := NewNormalizer(depth, true, false)
+	checkTitle("Checking size...")
+	if normalizer.Depth() != depth {
+		testERROR()
+		t.Errorf("Expected %d, got %d", depth, normalizer.Depth())
+	} else {
+		testOK()
+	}
 
 	checkTitle("Checking transitory steps...")
 	for i := 0; i < depth; i++ {
@@ -34,6 +41,7 @@ func TestNormalizerFeed(t *testing.T) {
 		}
 	}
 	testOK()
+
 }
 
 func TestCentering(t *testing.T) {

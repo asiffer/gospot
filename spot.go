@@ -22,53 +22,80 @@ var (
 	spotDownProbability   func(uintptr, float64) float64
 )
 
+var spotSymbols = map[string]interface{}{
+	"Spot_new":               &spotNew,
+	"Spot_delete":            &spotDelete,
+	"Spot_step":              &spotStep,
+	"Spot_getUpperThreshold": &spotGetUpperThreshold,
+	"Spot_getLowerThreshold": &spotGetLowerThreshold,
+	"Spot_getUpper_t":        &spotGetUpperT,
+	"Spot_getLower_t":        &spotGetLowerT,
+	"Spot_up_probability":    &spotUpProbability,
+	"Spot_down_probability":  &spotDownProbability,
+	"Spot_set_q":             &spotSetQ,
+}
+
 // LoadSymbolsSpot It loads the symbols related to the Spot object from
 // the C++ library libspot. It returns an error if a loading fails, nil
 // pointer otherwise
 func LoadSymbolsSpot() error {
 	var err error
-	err = libspot.Sym("Spot_new", &spotNew)
-	if err != nil {
-		return fmt.Errorf("Error in loading Spot_new (%s)", err.Error())
-	}
-	err = libspot.Sym("Spot_delete", &spotDelete)
-	if err != nil {
-		return fmt.Errorf("Error in loading Spot_delete (%s)", err.Error())
-	}
-	err = libspot.Sym("Spot_step", &spotStep)
-	if err != nil {
-		return fmt.Errorf("Error in loading Spot_step (%s)", err.Error())
-	}
-	err = libspot.Sym("Spot_getUpperThreshold", &spotGetUpperThreshold)
-	if err != nil {
-		return fmt.Errorf("Error in loading Spot_getUpperThreshold (%s)", err.Error())
-	}
-	err = libspot.Sym("Spot_getLowerThreshold", &spotGetLowerThreshold)
-	if err != nil {
-		return fmt.Errorf("Error in loading Spot_getLowerThreshold (%s)", err.Error())
-	}
-	err = libspot.Sym("Spot_getUpper_t", &spotGetUpperT)
-	if err != nil {
-		return fmt.Errorf("Error in loading Spot_getUpper_t (%s)", err.Error())
-	}
-	err = libspot.Sym("Spot_getLower_t", &spotGetLowerT)
-	if err != nil {
-		return fmt.Errorf("Error in loading Spot_getLower_t (%s)", err.Error())
-	}
-	err = libspot.Sym("Spot_set_q", &spotSetQ)
-	if err != nil {
-		return fmt.Errorf("Error in loading Spot_set_q (%s)", err.Error())
-	}
-	err = libspot.Sym("Spot_up_probability", &spotUpProbability)
-	if err != nil {
-		return fmt.Errorf("Error in loading Spot_up_probability (%s)", err.Error())
-	}
-	err = libspot.Sym("Spot_down_probability", &spotDownProbability)
-	if err != nil {
-		return fmt.Errorf("Error in loading Spot_down_probability (%s)", err.Error())
+	for k, f := range spotSymbols {
+		err = libspot.Sym(k, f)
+		if err != nil {
+			return fmt.Errorf("Error in loading %s (%s)", k, err.Error())
+		}
 	}
 	return nil
 }
+
+// LoadSymbolsSpot It loads the symbols related to the Spot object from
+// the C++ library libspot. It returns an error if a loading fails, nil
+// pointer otherwise
+// func LoadSymbolsSpot() error {
+// 	var err error
+// 	err = libspot.Sym("Spot_new", &spotNew)
+// 	if err != nil {
+// 		return fmt.Errorf("Error in loading Spot_new (%s)", err.Error())
+// 	}
+// 	err = libspot.Sym("Spot_delete", &spotDelete)
+// 	if err != nil {
+// 		return fmt.Errorf("Error in loading Spot_delete (%s)", err.Error())
+// 	}
+// 	err = libspot.Sym("Spot_step", &spotStep)
+// 	if err != nil {
+// 		return fmt.Errorf("Error in loading Spot_step (%s)", err.Error())
+// 	}
+// 	err = libspot.Sym("Spot_getUpperThreshold", &spotGetUpperThreshold)
+// 	if err != nil {
+// 		return fmt.Errorf("Error in loading Spot_getUpperThreshold (%s)", err.Error())
+// 	}
+// 	err = libspot.Sym("Spot_getLowerThreshold", &spotGetLowerThreshold)
+// 	if err != nil {
+// 		return fmt.Errorf("Error in loading Spot_getLowerThreshold (%s)", err.Error())
+// 	}
+// 	err = libspot.Sym("Spot_getUpper_t", &spotGetUpperT)
+// 	if err != nil {
+// 		return fmt.Errorf("Error in loading Spot_getUpper_t (%s)", err.Error())
+// 	}
+// 	err = libspot.Sym("Spot_getLower_t", &spotGetLowerT)
+// 	if err != nil {
+// 		return fmt.Errorf("Error in loading Spot_getLower_t (%s)", err.Error())
+// 	}
+// 	err = libspot.Sym("Spot_set_q", &spotSetQ)
+// 	if err != nil {
+// 		return fmt.Errorf("Error in loading Spot_set_q (%s)", err.Error())
+// 	}
+// 	err = libspot.Sym("Spot_up_probability", &spotUpProbability)
+// 	if err != nil {
+// 		return fmt.Errorf("Error in loading Spot_up_probability (%s)", err.Error())
+// 	}
+// 	err = libspot.Sym("Spot_down_probability", &spotDownProbability)
+// 	if err != nil {
+// 		return fmt.Errorf("Error in loading Spot_down_probability (%s)", err.Error())
+// 	}
+// 	return nil
+// }
 
 // Spot This object embeds a pointer to a C++ object Spot
 type Spot struct {
@@ -123,7 +150,6 @@ func (s *Spot) GetLowerT() float64 {
 		return spotGetLowerT(s.ptr)
 	}
 	return math.NaN()
-
 }
 
 // GetUpperThreshold returns the upper decision threshold

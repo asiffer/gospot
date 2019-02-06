@@ -10,24 +10,25 @@ import (
 func TestInitAndRunDSpot(t *testing.T) {
 	title("Testing DSpot initialization and run")
 	// init spot object
-	var depth = 50
-	var q = 1e-4
-	var nInit int32 = 2000
-	var level = 0.99
-	up, down, alert, bounded := true, true, true, true
-	var maxExcess int32 = 200
+	// var depth = 50
+	// var q = 1e-4
+	// var nInit int32 = 2000
+	// var level = 0.99
+	// up, down, alert, bounded := true, true, true, true
+	// var maxExcess int32 = 200
 
 	checkTitle("Building DSpot...")
-	dspot := NewDSpot(
-		depth,
-		q,
-		nInit,
-		level,
-		up,
-		down,
-		alert,
-		bounded,
-		maxExcess)
+	// dspot := NewDSpot(
+	// 	depth,
+	// 	q,
+	// 	nInit,
+	// 	level,
+	// 	up,
+	// 	down,
+	// 	alert,
+	// 	bounded,
+	// 	maxExcess)
+	dspot := NewDefaultDSpot()
 	testOK()
 
 	// data
@@ -39,6 +40,8 @@ func TestInitAndRunDSpot(t *testing.T) {
 		dspot.Step(data[i])
 	}
 	testOK()
+
+	fmt.Println(dspot.Status())
 
 	checkTitle("Deleting...")
 	dspot.Delete()
@@ -289,16 +292,19 @@ func TestDSpotProbabilityComputation(t *testing.T) {
 	}
 	dspot = NewDSpotFromConfig(config)
 	checkTitle("Checking NaN (Up)...")
-	if !math.IsNaN(dspot.UpProbability(12.)) {
-		testERROR()
-	} else {
+	checkTitle("Checking NaN (Up)...")
+	if math.IsNaN(dspot.UpProbability(12.)) && math.IsNaN(dspot.GetUpperT()) && math.IsNaN(dspot.GetUpperThreshold()) {
 		testOK()
+	} else {
+		testERROR()
 	}
 
 	checkTitle("Checking NaN (Down)...")
-	if !math.IsNaN(dspot.DownProbability(-12.)) {
-		testERROR()
-	} else {
+	if math.IsNaN(dspot.DownProbability(12.)) && math.IsNaN(dspot.GetLowerT()) && math.IsNaN(dspot.GetLowerThreshold()) {
 		testOK()
+	} else {
+		testERROR()
 	}
+
+	fmt.Println(dspot.Config())
 }
