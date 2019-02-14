@@ -291,7 +291,7 @@ func TestDSpotProbabilityComputation(t *testing.T) {
 		500,
 	}
 	dspot = NewDSpotFromConfig(config)
-	checkTitle("Checking NaN (Up)...")
+
 	checkTitle("Checking NaN (Up)...")
 	if math.IsNaN(dspot.UpProbability(12.)) && math.IsNaN(dspot.GetUpperT()) && math.IsNaN(dspot.GetUpperThreshold()) {
 		testOK()
