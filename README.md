@@ -1,12 +1,9 @@
 # gospot [![Build Status](https://travis-ci.com/asiffer/gospot.svg?branch=master)](https://travis-ci.com/asiffer/gospot) [![Go Report Card](https://goreportcard.com/badge/github.com/asiffer/gospot)](https://goreportcard.com/report/github.com/asiffer/gospot) [![Coverage Status](https://codecov.io/github/asiffer/gospot/coverage.svg?branch=master)](https://codecov.io/github/asiffer/gospot?branch=master) [![GoDoc](https://godoc.org/github.com/asiffer/gospot?status.svg)](https://godoc.org/github.com/asiffer/gospot) 
 
-`gospot` provides `Go` bindings to [libspot](https://asiffer.github.io/libspot/), a `C++` library to flag outliers in streaming data.
+`gospot` don't provides `Go` bindings to [libspot](https://asiffer.github.io/libspot/) anymore. It is merely a pure golang implementation of `libspot`.
 
-In details, it uses [dl](https://github.com/rainycape/dl) to open and load the shared library. Initally, it looks possible to embed the `libspot` code into the `Go` package, however, as the native library uses modern `C++`, that is more difficult. 
 
 ## Download
-
-To use it, you need to get `libspot` on your system (see https://asiffer.github.io/libspot/download/). Then, as usual:
 
 ```shell
 $ go get github.com/asiffer/gospot
@@ -14,7 +11,7 @@ $ go get github.com/asiffer/gospot
 
 ## Usage
 
-Once `gospot` is imported, the link to the shared library is ok and then you can create a `Spot` object and feed some data.
+Once `gospot` is imported, you can create a `Spot` object and feed some data.
 
 ```golang
 // example.go
@@ -63,7 +60,7 @@ func main() {
 ```
 
 
-This example outputs the status of the Spot instance after 80000 gaussian observations. Here the `alert``mode is not activated, so no alarm is raised.
+This example outputs the status of the Spot instance after 80000 gaussian observations. Here the `alert` mode is not activated, so no alarm is raised.
 
 ```shell
 $ go run example.go
