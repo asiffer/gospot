@@ -1,6 +1,6 @@
 # gospot [![Build Status](https://travis-ci.com/asiffer/gospot.svg?branch=master)](https://travis-ci.com/asiffer/gospot) [![Go Report Card](https://goreportcard.com/badge/github.com/asiffer/gospot)](https://goreportcard.com/report/github.com/asiffer/gospot) [![Coverage Status](https://codecov.io/github/asiffer/gospot/coverage.svg?branch=master)](https://codecov.io/github/asiffer/gospot?branch=master) [![GoDoc](https://godoc.org/github.com/asiffer/gospot?status.svg)](https://godoc.org/github.com/asiffer/gospot) 
 
-`gospot` don't provides `Go` bindings to [libspot](https://asiffer.github.io/libspot/) anymore. It is merely a pure golang implementation of `libspot`.
+`gospot` does not provide `Go` bindings to [libspot](https://asiffer.github.io/libspot/) anymore. It is merely a pure golang implementation of `libspot`.
 
 
 ## Download
