@@ -27,8 +27,8 @@ func TestSpotThresholdComputation(t *testing.T) {
 
 	sc := SpotConfig{
 		Q:         1e-4,
-		Ninit:     4000,
-		Level:     0.99,
+		Ninit:     10000,
+		Level:     0.995,
 		Up:        true,
 		Down:      true,
 		Alert:     false,
@@ -47,7 +47,7 @@ func TestSpotThresholdComputation(t *testing.T) {
 	}
 
 	// data
-	var N = 5000
+	var N = 12000
 	data := standardGaussianSample(N)
 
 	for i := 0; i < N; i++ {
@@ -59,8 +59,8 @@ func TestSpotThresholdComputation(t *testing.T) {
 
 	checkTitle("Checking error...")
 
-	if relativeError > 5.0 {
-		t.Errorf("Expected lower than 5%%, got %.2f", relativeError)
+	if relativeError > 7.0 {
+		t.Errorf("Expected lower than 7%%, got %.2f%%", relativeError)
 		testERROR()
 		fmt.Println(spot.Status())
 	} else if relativeError > 2.5 {

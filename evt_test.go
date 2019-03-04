@@ -16,8 +16,8 @@ func TestEVT(t *testing.T) {
 }
 
 func TestCdf(t *testing.T) {
-	N := 25000
-	Nt := 250
+	N := 50000
+	Nt := 100
 	checkTitle("Checking tail fit (normal)...")
 	tail := NewTail(-1)
 
@@ -29,7 +29,7 @@ func TestCdf(t *testing.T) {
 	}
 	tail.Fit()
 
-	if math.Abs(tail.gamma) > epsilon {
+	if tail.gamma > 0. {
 		t.Errorf("Bad fitted gamma, expected 0., got %f", tail.gamma)
 		testERROR()
 	} else if tail.gamma < 0 {
@@ -57,7 +57,7 @@ func TestCdf(t *testing.T) {
 }
 
 func TestQuantile(t *testing.T) {
-	N := 25000
+	N := 50000
 	Nt := 100
 	checkTitle("Checking quantile (normal)...")
 	tail := NewTail(-1)
