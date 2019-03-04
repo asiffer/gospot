@@ -2,229 +2,221 @@
 
 package gospot
 
-import "C"
-
 import (
-	"fmt"
 	"math"
+	"sort"
 )
 
-var (
-	spotNew               func(float64, int32, float64, uint8, uint8, uint8, uint8, int32) uintptr
-	spotDelete            func(uintptr)
-	spotStep              func(uintptr, float64) int32
-	spotGetUpperThreshold func(uintptr) float64
-	spotGetLowerThreshold func(uintptr) float64
-	spotGetUpperT         func(uintptr) float64
-	spotGetLowerT         func(uintptr) float64
-	spotSetQ              func(uintptr, float64)
-	spotUpProbability     func(uintptr, float64) float64
-	spotDownProbability   func(uintptr, float64) float64
+const (
+	// Normal refers to normal data
+	Normal = 0
+	// AlertUp refers to an upper anomaly
+	AlertUp = 1
+	// AlertDown refers to lower anomaly
+	AlertDown = -1
+	// ExcessUp refers to a data used to the upper tail fit
+	ExcessUp = 2
+	// ExcessDown refers to a data used to the lower tail fit
+	ExcessDown = -2
+	// InitBatch refers to a data stored in the initial batch (before calibration)
+	InitBatch = 3
+	// Calibration refers to the last InitBatch data (the calibration step is performed)
+	Calibration = 4
+	// NormalizerError is used in DSpot when something bad occured during normalization
+	NormalizerError = 5
 )
-
-var spotSymbols = map[string]interface{}{
-	"Spot_new":               &spotNew,
-	"Spot_delete":            &spotDelete,
-	"Spot_step":              &spotStep,
-	"Spot_getUpperThreshold": &spotGetUpperThreshold,
-	"Spot_getLowerThreshold": &spotGetLowerThreshold,
-	"Spot_getUpper_t":        &spotGetUpperT,
-	"Spot_getLower_t":        &spotGetLowerT,
-	"Spot_up_probability":    &spotUpProbability,
-	"Spot_down_probability":  &spotDownProbability,
-	"Spot_set_q":             &spotSetQ,
-}
-
-// LoadSymbolsSpot It loads the symbols related to the Spot object from
-// the C++ library libspot. It returns an error if a loading fails, nil
-// pointer otherwise
-func LoadSymbolsSpot() error {
-	var err error
-	for k, f := range spotSymbols {
-		err = libspot.Sym(k, f)
-		if err != nil {
-			return fmt.Errorf("Error in loading %s (%s)", k, err.Error())
-		}
-	}
-	return nil
-}
-
-// LoadSymbolsSpot It loads the symbols related to the Spot object from
-// the C++ library libspot. It returns an error if a loading fails, nil
-// pointer otherwise
-// func LoadSymbolsSpot() error {
-// 	var err error
-// 	err = libspot.Sym("Spot_new", &spotNew)
-// 	if err != nil {
-// 		return fmt.Errorf("Error in loading Spot_new (%s)", err.Error())
-// 	}
-// 	err = libspot.Sym("Spot_delete", &spotDelete)
-// 	if err != nil {
-// 		return fmt.Errorf("Error in loading Spot_delete (%s)", err.Error())
-// 	}
-// 	err = libspot.Sym("Spot_step", &spotStep)
-// 	if err != nil {
-// 		return fmt.Errorf("Error in loading Spot_step (%s)", err.Error())
-// 	}
-// 	err = libspot.Sym("Spot_getUpperThreshold", &spotGetUpperThreshold)
-// 	if err != nil {
-// 		return fmt.Errorf("Error in loading Spot_getUpperThreshold (%s)", err.Error())
-// 	}
-// 	err = libspot.Sym("Spot_getLowerThreshold", &spotGetLowerThreshold)
-// 	if err != nil {
-// 		return fmt.Errorf("Error in loading Spot_getLowerThreshold (%s)", err.Error())
-// 	}
-// 	err = libspot.Sym("Spot_getUpper_t", &spotGetUpperT)
-// 	if err != nil {
-// 		return fmt.Errorf("Error in loading Spot_getUpper_t (%s)", err.Error())
-// 	}
-// 	err = libspot.Sym("Spot_getLower_t", &spotGetLowerT)
-// 	if err != nil {
-// 		return fmt.Errorf("Error in loading Spot_getLower_t (%s)", err.Error())
-// 	}
-// 	err = libspot.Sym("Spot_set_q", &spotSetQ)
-// 	if err != nil {
-// 		return fmt.Errorf("Error in loading Spot_set_q (%s)", err.Error())
-// 	}
-// 	err = libspot.Sym("Spot_up_probability", &spotUpProbability)
-// 	if err != nil {
-// 		return fmt.Errorf("Error in loading Spot_up_probability (%s)", err.Error())
-// 	}
-// 	err = libspot.Sym("Spot_down_probability", &spotDownProbability)
-// 	if err != nil {
-// 		return fmt.Errorf("Error in loading Spot_down_probability (%s)", err.Error())
-// 	}
-// 	return nil
-// }
 
 // Spot This object embeds a pointer to a C++ object Spot
 type Spot struct {
-	// ptr pointer to Spot instance
-	ptr uintptr
-	// up/down flag
-	Up   bool
-	Down bool
+	config *SpotConfig
+	status *SpotStatus
+	up     *Tail
+	down   *Tail
+	tmp    []float64
 }
 
-// NewDefaultSpot is the default constructor of a Spot object
+// NewSpotFromConfig creates from a SpotConfig structure
+func NewSpotFromConfig(conf *SpotConfig) *Spot {
+	return &Spot{
+		config: conf,
+		status: NewSpotStatus(),
+		up:     NewTail(conf.MaxExcess),
+		down:   NewTail(conf.MaxExcess),
+		tmp:    make([]float64, 0),
+	}
+}
+
+// NewDefaultSpot is the default Spot constructor
 func NewDefaultSpot() *Spot {
-	return NewSpotFromConfig(DefaultSpotConfig)
+	return NewSpotFromConfig(&DefaultSpotConfig)
 }
 
-// NewSpot is the Spot constructor
-func NewSpot(q float64, nInit int32, level float64, up bool, down bool, alert bool, bounded bool, maxExcess int32) *Spot {
-	up8 := bool2uint8(up)
-	down8 := bool2uint8(down)
-	alert8 := bool2uint8(alert)
-	bounded8 := bool2uint8(bounded)
-	return &Spot{ptr: spotNew(q, nInit, level, up8, down8, alert8, bounded8, maxExcess), Up: up, Down: down}
+func (s *Spot) calibrate() {
+	sort.Float64s(s.tmp)
+
+	if s.config.Up {
+		// retrieve the upper t threshold
+		indexUp := int(s.config.Level * float64(s.config.Ninit))
+		s.status.TUp = s.tmp[indexUp-1]
+
+		// feed the tail with the excesses
+		for _, ex := range s.tmp[indexUp:] {
+			s.status.NtUp++
+			s.up.AddExcess(ex - s.status.TUp)
+		}
+		// upperTail fit
+		s.up.Fit()
+		s.updateUpThreshold()
+	}
+
+	if s.config.Up {
+		// retrieve the lower t threshold
+		indexDown := int((1. - s.config.Level) * float64(s.config.Ninit))
+		s.status.TDown = s.tmp[indexDown]
+
+		// feed the tail with the excesses
+		for _, ex := range s.tmp[:indexDown] {
+			s.status.NtDown++
+			s.down.AddExcess(s.status.TDown - ex)
+		}
+
+		// upperTail fit
+		s.down.Fit()
+		s.updateDownThreshold()
+	}
 }
 
-// NewSpotFromConfig creates a Spot instance from a config structure
-func NewSpotFromConfig(sc SpotConfig) *Spot {
-	return NewSpot(sc.Q, sc.Ninit, sc.Level, sc.Up, sc.Down, sc.Alert, sc.Bounded, sc.MaxExcess)
+func (s *Spot) updateUpThreshold() {
+	s.status.ExUp = s.up.ubend.Length()
+	s.status.ZUp = s.up.Quantile(
+		s.config.Q,
+		s.status.TUp,
+		s.status.N,
+		s.status.NtUp,
+	)
 }
 
-// Delete Destructor
-func (s *Spot) Delete() {
-	spotDelete(s.ptr)
+func (s *Spot) updateDownThreshold() {
+	s.status.ExDown = s.down.ubend.Length()
+	s.status.ZDown = 2*s.status.TDown - s.down.Quantile(
+		s.config.Q,
+		s.status.TDown,
+		s.status.N,
+		s.status.NtDown,
+	)
 }
 
-// Step Method which update the Spot instance according to a new incoming value
-func (s *Spot) Step(x float64) int32 {
-	return spotStep(s.ptr, x)
+// Step performs one Spot step (it analyzes the input data)
+func (s *Spot) Step(x float64) int {
+	if len(s.tmp) == s.config.Ninit-1 {
+		// last init batch data + calibration
+		s.tmp = append(s.tmp, x)
+		s.status.N++
+		s.calibrate()
+		return Calibration
+	}
+	if len(s.tmp) < s.config.Ninit {
+		// init batch data
+		s.status.N++
+		s.tmp = append(s.tmp, x)
+		return InitBatch
+	}
+	if s.config.Up {
+		// Up Alert
+		if s.config.Alert && x > s.status.ZUp {
+			s.status.AlUp++
+			return AlertUp
+		}
+		// Up Excess
+		if x > s.status.TUp {
+			s.up.AddExcess(x - s.status.TUp)
+			s.up.Fit()
+			s.updateUpThreshold()
+			s.status.NtUp++
+			s.status.N++
+			return ExcessUp
+		}
+	}
+	if s.config.Down {
+		// Down alert
+		if s.config.Alert && x < s.status.ZDown {
+			s.status.AlDown++
+			return AlertDown
+		}
+		// Down excess
+		if x < s.status.TDown {
+			s.down.AddExcess(s.status.TDown - x)
+			s.down.Fit()
+			s.updateDownThreshold()
+			s.status.NtDown++
+			s.status.N++
+			return ExcessDown
+		}
+	}
+
+	// Normal data
+	s.status.N++
+	return Normal
 }
 
 // GetUpperT Returns the upper threshold t
 func (s *Spot) GetUpperT() float64 {
-	if s.Up {
-		return spotGetUpperT(s.ptr)
-	}
-	return math.NaN()
-
+	return s.status.TUp
 }
 
 // GetLowerT Returns the lower threshold t
 func (s *Spot) GetLowerT() float64 {
-	if s.Down {
-		return spotGetLowerT(s.ptr)
-	}
-	return math.NaN()
+	return s.status.TDown
 }
 
 // GetUpperThreshold returns the upper decision threshold
 func (s *Spot) GetUpperThreshold() float64 {
-	if s.Up {
-		return spotGetUpperThreshold(s.ptr)
-	}
-	return math.NaN()
-
+	return s.status.ZUp
 }
 
 // GetLowerThreshold returns the lower decision threshold
 func (s *Spot) GetLowerThreshold() float64 {
-	if s.Down {
-		return spotGetLowerThreshold(s.ptr)
-	}
-	return math.NaN()
-
+	return s.status.ZDown
 }
 
 // SetQ Change the value of the decision probability.
 // It then changes the decision thresholds
 func (s *Spot) SetQ(q float64) {
-	spotSetQ(s.ptr, q)
+	s.config.Q = q
 }
 
 // UpProbability Given a quantile z, computes the probability
 // to observe a value greater than z
 func (s *Spot) UpProbability(z float64) float64 {
-	if s.Up {
-		return spotUpProbability(s.ptr, z)
+	if s.config.Up {
+		return s.up.Cdf(
+			z,
+			s.status.TUp,
+			s.status.N,
+			s.status.NtUp)
 	}
 	return math.NaN()
-
 }
 
 // DownProbability Given a quantile z, computes the probability
 // to observe a value lower than z
 func (s *Spot) DownProbability(z float64) float64 {
-	if s.Down {
-		return spotDownProbability(s.ptr, z)
+	if s.config.Down {
+		return s.down.Cdf(
+			2*s.status.TDown-z,
+			s.status.TDown,
+			s.status.N,
+			s.status.NtDown)
 	}
 	return math.NaN()
-
 }
 
 // Status returns the current status of the Spot instance
 func (s *Spot) Status() SpotStatus {
-	statusPtr := spotStatusNew(s.ptr)
-	defer spotStatusDelete(statusPtr)
-	return SpotStatus{
-		N:      statusGetN(statusPtr),
-		ExUp:   statusGetExUp(statusPtr),
-		ExDown: statusGetExDown(statusPtr),
-		NtUp:   statusGetNtUp(statusPtr),
-		NtDown: statusGetNtDown(statusPtr),
-		AlUp:   statusGetAlUp(statusPtr),
-		AlDown: statusGetAlDown(statusPtr),
-		TUp:    statusGetTUp(statusPtr),
-		TDown:  statusGetTDown(statusPtr),
-		ZUp:    statusGetZUp(statusPtr),
-		ZDown:  statusGetZDown(statusPtr)}
+	return *s.status
 }
 
 // Config returns the configuration of the Spot instance
 func (s *Spot) Config() SpotConfig {
-	configPtr := spotConfigNew(s.ptr)
-	defer spotConfigDelete(configPtr)
-	return SpotConfig{
-		Q:         configGetQ(configPtr),
-		Ninit:     configGetNinit(configPtr),
-		Level:     configGetLevel(configPtr),
-		Up:        configGetUp(configPtr) == 1,
-		Down:      configGetDown(configPtr) == 1,
-		Alert:     configGetAlert(configPtr) == 1,
-		Bounded:   configGetBounded(configPtr) == 1,
-		MaxExcess: configGetMaxExcess(configPtr)}
+	return *s.config
 }

@@ -33,7 +33,7 @@ func TestInitAndRunDSpot(t *testing.T) {
 
 	// data
 	var N = 10000
-	data := gaussianSample(N)
+	data := standardGaussianSample(N)
 
 	checkTitle("Feeding...")
 	for i := 0; i < N; i++ {
@@ -41,11 +41,11 @@ func TestInitAndRunDSpot(t *testing.T) {
 	}
 	testOK()
 
-	fmt.Println(dspot.Status())
+	fmt.Println(dspot.status)
 
-	checkTitle("Deleting...")
-	dspot.Delete()
-	testOK()
+	// checkTitle("Deleting...")
+	// dspot.Delete()
+	// testOK()
 }
 
 func TestDriftComputation(t *testing.T) {
@@ -65,12 +65,12 @@ func TestDriftComputation(t *testing.T) {
 		},
 		500,
 	}
-	dspot := NewDSpotFromConfig(config)
+	dspot := NewDSpotFromConfig(&config)
 
 	// data
 	var drift = 10.0
 	var N = 10000
-	data := gaussianSample(N)
+	data := standardGaussianSample(N)
 
 	for i := 0; i < N; i++ {
 		dspot.Step(data[i] + drift)
@@ -87,7 +87,7 @@ func TestDriftComputation(t *testing.T) {
 		testOK()
 	}
 
-	dspot.Delete()
+	// dspot.Delete()
 }
 
 // func TestDSpotStatus(t *testing.T) {
@@ -127,36 +127,34 @@ func TestDriftComputation(t *testing.T) {
 func TestNullDepth(t *testing.T) {
 	title("Testing null depth")
 	// init spot object
-	var depth = 0
-	var q = 1e-3
-	var nInit int32 = 2000
-	var level = 0.99
-	up, down, alert, bounded := true, true, true, true
-	var maxExcess int32 = 200
+	// var depth = 0
+	// var q = 1e-3
+	// var nInit int32 = 2000
+	// var level = 0.99
+	// up, down, alert, bounded := true, true, true, true
+	// var maxExcess int32 = 200
 
-	dspot := NewDSpot(
-		depth,
-		q,
-		nInit,
-		level,
-		up,
-		down,
-		alert,
-		bounded,
-		maxExcess)
-	spot := NewSpot(
-		q,
-		nInit,
-		level,
-		up,
-		down,
-		alert,
-		bounded,
-		maxExcess)
+	sc := SpotConfig{
+		Q:         1e-3,
+		Ninit:     2000,
+		Level:     0.99,
+		Up:        true,
+		Down:      true,
+		Alert:     true,
+		Bounded:   true,
+		MaxExcess: 200}
+
+	dsc := DSpotConfig{
+		Depth:      0,
+		SpotConfig: sc,
+	}
+
+	dspot := NewDSpotFromConfig(&dsc)
+	spot := NewSpotFromConfig(&sc)
 
 	// data
 	var N = 7000
-	data := gaussianSample(N)
+	data := standardGaussianSample(N)
 
 	for i := 0; i < N; i++ {
 		dspot.Step(data[i])
@@ -167,14 +165,12 @@ func TestNullDepth(t *testing.T) {
 	if dspot.Status().SpotStatus != spot.Status() {
 		t.Error("Different status")
 		testERROR()
-		fmt.Print("\n-- DSPOT --\n", dspot.Status(), "\n")
+		fmt.Print("\n-- DSPOT --\n", dspot.status, "\n")
 		fmt.Print("-- SPOT --\n", spot.Status(), "\n")
 	} else {
 		testOK()
 	}
 
-	spot.Delete()
-	dspot.Delete()
 }
 
 func TestDBasicDSpotAccess(t *testing.T) {
@@ -193,11 +189,11 @@ func TestDBasicDSpotAccess(t *testing.T) {
 		},
 		500,
 	}
-	dspot := NewDSpotFromConfig(config)
+	dspot := NewDSpotFromConfig(&config)
 
 	N := 2 * int(config.Ninit)
 
-	data := gaussianSample(N)
+	data := standardGaussianSample(N)
 
 	for i := 0; i < N; i++ {
 		dspot.Step(data[i])
@@ -231,7 +227,7 @@ func TestDBasicDSpotAccess(t *testing.T) {
 }
 
 func TestDSpotProbabilityComputation(t *testing.T) {
-	title("Probability computation")
+	title("DSpot probability computation")
 
 	config := DSpotConfig{
 		SpotConfig{
@@ -246,9 +242,9 @@ func TestDSpotProbabilityComputation(t *testing.T) {
 		},
 		500,
 	}
-	dspot := NewDSpotFromConfig(config)
+	dspot := NewDSpotFromConfig(&config)
 	N := int(config.Ninit)
-	data := gaussianSample(N)
+	data := standardGaussianSample(N)
 	drift := 7.0
 
 	for i := 0; i < N; i++ {
@@ -290,7 +286,7 @@ func TestDSpotProbabilityComputation(t *testing.T) {
 		},
 		500,
 	}
-	dspot = NewDSpotFromConfig(config)
+	dspot = NewDSpotFromConfig(&config)
 
 	checkTitle("Checking NaN (Up)...")
 	if math.IsNaN(dspot.UpProbability(12.)) && math.IsNaN(dspot.GetUpperT()) && math.IsNaN(dspot.GetUpperThreshold()) {

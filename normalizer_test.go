@@ -45,7 +45,7 @@ func TestNormalizerFeed(t *testing.T) {
 }
 
 func TestCentering(t *testing.T) {
-	title("Testing centering")
+	title("Normalizer - Testing centering")
 	var z float64
 	// var err error
 	depth := 10
@@ -68,7 +68,7 @@ func TestCentering(t *testing.T) {
 }
 
 func TestScaling(t *testing.T) {
-	title("Testing scaling")
+	title("Normalizer - Testing scaling")
 	var z float64
 	depth := 20
 

@@ -20,7 +20,7 @@ type Normalizer struct {
 // centering means that data will be centered
 // scaling means that data will be divided by the standard deviation
 func NewNormalizer(depth int, centering bool, scaling bool) *Normalizer {
-	if depth == 0 {
+	if depth <= 0 {
 		centering = false
 		scaling = false
 	}

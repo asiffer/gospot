@@ -2,7 +2,9 @@
 
 package gospot
 
-import "math"
+import (
+	"math"
+)
 
 // Ubend is a circular container of a given size. It appends
 // new data until the size is reached. After that it replace
@@ -18,7 +20,8 @@ type Ubend struct {
 
 // NewUbend creates a new Ubend structure.
 func NewUbend(size int) *Ubend {
-	return &Ubend{data: make([]float64, 0),
+	return &Ubend{
+		data:           make([]float64, 0),
 		m:              0.0,
 		m2:             0.0,
 		id:             0,
@@ -28,6 +31,7 @@ func NewUbend(size int) *Ubend {
 
 // Length returns the current number of data in the container
 func (u *Ubend) Length() int {
+	// fmt.Println(len(u.data))
 	return len(u.data)
 }
 
@@ -48,7 +52,7 @@ func (u *Ubend) Clear() {
 // Push add a new data to the container. It updates the
 // basic moments.
 func (u *Ubend) Push(x float64) {
-	if u.Length() < u.Size() {
+	if u.Length() < u.Size() || u.Size() <= 0 {
 		u.data = append(u.data, x)
 		// update moment
 		u.m += x
@@ -91,7 +95,7 @@ func (u *Ubend) Cancel() {
 // IsFull returns whether the container is full (cruising regime)
 // or not (transitory regime).
 func (u *Ubend) IsFull() bool {
-	return u.Size() == u.Length()
+	return u.Size() == u.Length() || u.Size() <= 0
 }
 
 // Mean computes the mean of the current data

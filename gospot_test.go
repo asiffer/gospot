@@ -4,6 +4,7 @@ package gospot
 
 import (
 	"fmt"
+	"math/rand"
 	"strings"
 )
 
@@ -47,4 +48,28 @@ func title(s string) {
 
 	fmt.Println(left + s + right)
 
+}
+
+func uniformSample(n int) []float64 {
+	sample := make([]float64, n)
+	for i := 0; i < n; i++ {
+		sample[i] = rand.Float64()
+	}
+	return sample
+}
+
+func standardGaussianSample(n int) []float64 {
+	data := make([]float64, n)
+	for i := 0; i < n; i++ {
+		data[i] = rand.NormFloat64()
+	}
+	return data
+}
+
+func standardExpSample(n int) []float64 {
+	sample := make([]float64, n)
+	for i := 0; i < n; i++ {
+		sample[i] = rand.ExpFloat64()
+	}
+	return sample
 }
