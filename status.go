@@ -10,27 +10,27 @@ import (
 // SpotStatus is the structure embedding the status of a Spot instance
 type SpotStatus struct {
 	// N is the number of normal observations (not the alarms)
-	N int
-	// ExUp is the urrent number of up excesses
-	ExUp int
+	N int `json:"n"`
+	// ExUp is the current number of up excesses
+	ExUp int `json:"ex_up"`
 	// ExDown is the current number of down excesses
-	ExDown int
+	ExDown int `json:"ex_down"`
 	// NtUp is the total number of up excesses
-	NtUp int
+	NtUp int `json:"Nt_up"`
 	// NtDown is the total number of down excesses
-	NtDown int
+	NtDown int `json:"Nt_down"`
 	// AlUp is the number of up alarms
-	AlUp int
+	AlUp int `json:"al_up"`
 	// AlDown is the number of down alarms
-	AlDown int
+	AlDown int `json:"al_down"`
 	// TUp is the transitional up threshold
-	TUp float64
+	TUp float64 `json:"t_up"`
 	// TDown is the transitional down threshold
-	TDown float64
+	TDown float64 `json:"t_down"`
 	// ZUp is the up alert thresholds
-	ZUp float64
+	ZUp float64 `json:"th_up"`
 	// ZDown is the down alert thresholds
-	ZDown float64
+	ZDown float64 `json:"th_down"`
 }
 
 // NewSpotStatus creates a new empty spot status structure
@@ -56,52 +56,6 @@ type DSpotStatus struct {
 	// Mean is the the value of the current local model
 	Mean float64
 }
-
-// var (
-// 	spotStatusNew    func(uintptr) uintptr
-// 	spotStatusDelete func(uintptr)
-// 	statusGetN       func(uintptr) int32
-// 	statusGetExUp    func(uintptr) int32
-// 	statusGetExDown  func(uintptr) int32
-// 	statusGetNtUp    func(uintptr) int32
-// 	statusGetNtDown  func(uintptr) int32
-// 	statusGetAlUp    func(uintptr) int32
-// 	statusGetAlDown  func(uintptr) int32
-// 	statusGetTUp     func(uintptr) float64
-// 	statusGetTDown   func(uintptr) float64
-// 	statusGetZUp     func(uintptr) float64
-// 	statusGetZDown   func(uintptr) float64
-// )
-
-// var statusSymbols = map[string]interface{}{
-// 	"Spot_status_ptr":     &spotStatusNew,
-// 	"Spot_status_delete":  &spotStatusDelete,
-// 	"_status_get_n":       &statusGetN,
-// 	"_status_get_ex_up":   &statusGetExUp,
-// 	"_status_get_ex_down": &statusGetExDown,
-// 	"_status_get_Nt_up":   &statusGetNtUp,
-// 	"_status_get_Nt_down": &statusGetNtDown,
-// 	"_status_get_al_up":   &statusGetAlUp,
-// 	"_status_get_al_down": &statusGetAlDown,
-// 	"_status_get_t_up":    &statusGetTUp,
-// 	"_status_get_t_down":  &statusGetTDown,
-// 	"_status_get_z_up":    &statusGetZUp,
-// 	"_status_get_z_down":  &statusGetZDown,
-// }
-
-// LoadSymbolsStatus It loads the symbols related to the SpotStatus object
-// from the C++ library libspot. It returns an error if a loading fails, nil
-// pointer otherwise
-// func LoadSymbolsStatus() error {
-// 	var err error
-// 	for k, f := range statusSymbols {
-// 		err = libspot.Sym(k, f)
-// 		if err != nil {
-// 			return fmt.Errorf("Error in loading %s (%s)", k, err.Error())
-// 		}
-// 	}
-// 	return nil
-// }
 
 func (ss SpotStatus) String() string {
 	return fmt.Sprintf("%8s %d\n%8s %d\n%8s %d\n%8s %d\n%8s %d\n%8s %d\n%8s %d\n%8s %.6f\n%8s %.6f\n%8s %.6f\n%8s %.6f\n",
