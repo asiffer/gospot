@@ -6,7 +6,7 @@ package gospot
 var (
 	// DefaultSpotConfig is the default structure to create a Spot Object
 	DefaultSpotConfig = SpotConfig{
-		Q:         1e-3,
+		Q:         1e-4,
 		Ninit:     1500,
 		Level:     0.98,
 		Up:        true,

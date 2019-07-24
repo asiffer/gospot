@@ -15,7 +15,7 @@ type Tail struct {
 }
 
 var (
-	epsilon = 3.e-8
+	epsilon = 3.e-10
 )
 
 func grimshawU(x float64, excesses []float64) float64 {
@@ -36,11 +36,16 @@ func grimshawV(x float64, excesses []float64) float64 {
 
 func loglikelihoodGPD(sigma float64, gamma float64, excesses []float64) float64 {
 	Nt := float64(len(excesses))
-	a := (1. + 1./gamma)
-	b := gamma / sigma
-	ll := Nt * math.Log(sigma)
-	for _, yi := range excesses {
-		ll += a * math.Log(1.+b*yi)
+	var ll float64
+	if gamma == 0. {
+		ll = Nt*math.Log(sigma) + sum(excesses)/sigma
+	} else {
+		a := (1. + 1./gamma)
+		b := gamma / sigma
+		ll = Nt * math.Log(sigma)
+		for _, yi := range excesses {
+			ll += a * math.Log(1.+b*yi)
+		}
 	}
 	return -ll
 }
@@ -68,29 +73,48 @@ func (tail *Tail) Fit() {
 	// fmt.Println("Nt =", Nt)
 	fun := func(x float64, args interface{}) float64 {
 		ex := (args).([]float64)
-		return 1. - grimshawU(x, ex)*grimshawV(x, ex)
+		return grimshawU(x, ex)*grimshawV(x, ex) - 1.
+		// return math.Log(grimshawU(x, ex)) + math.Log(grimshawV(x, ex))
 	}
 	Ymean := sum(excesses) / Nt
 	Ymin := min(excesses)
 	Ymax := max(excesses)
 
-	a := -1./Ymax + epsilon
+	a := (-1. / Ymax) + epsilon
 	b := -epsilon
-	c := 2 * (Ymean - Ymin) / (Ymean * Ymin)
+	c := epsilon
 	d := 2 * (Ymean - Ymin) / (Ymin * Ymin)
 
-	// first root
-	root1, err1 := BrentRootFinder(fun, excesses, a, b, 1e-6)
-	// second root
-	root2, err2 := BrentRootFinder(fun, excesses, c, d, 1e-6)
-	roots := []float64{0.}
+	// check if the function w is convex close to 0
+	isConvex := tail.ubend.Var() >= math.Pow(tail.ubend.Mean(), 2.0)
+	roots := []float64{0.0}
+	var root float64
+	var err error
 
-	if err1 == nil {
-		roots = append(roots, root1)
+	if isConvex {
+		// right root
+		root, err = BrentRootFinder(fun, excesses, c, d, 1e-6)
+		if err == nil {
+			roots = append(roots, root)
+		}
+
+		// left root
+		root, err = BrentRootFinder(fun, excesses, a, b, 1e-6)
+		if err == nil {
+			roots = append(roots, root)
+		}
 	}
-	if err2 == nil {
-		roots = append(roots, root2)
-	}
+
+	// if err == nil {
+	// 	roots = append(roots, root)
+	// }
+
+	// if err1 == nil {
+	// 	roots = append(roots, root1)
+	// }
+	// if err2 == nil {
+	// 	roots = append(roots, root2)
+	// }
 
 	llmax := math.Inf(-1)
 	ll := 0.

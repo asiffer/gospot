@@ -69,7 +69,7 @@ func (s *Spot) calibrate() {
 		s.updateUpThreshold()
 	}
 
-	if s.config.Up {
+	if s.config.Down {
 		// retrieve the lower t threshold
 		indexDown := int((1. - s.config.Level) * float64(s.config.Ninit))
 		s.status.TDown = s.tmp[indexDown]

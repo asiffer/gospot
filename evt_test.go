@@ -16,8 +16,9 @@ func TestEVT(t *testing.T) {
 }
 
 func TestCdf(t *testing.T) {
-	N := 50000
-	Nt := 100
+	N := 10000
+	Nt := N / 100
+
 	checkTitle("Checking tail fit (normal)...")
 	tail := NewTail(-1)
 
@@ -34,13 +35,16 @@ func TestCdf(t *testing.T) {
 		testERROR()
 	} else if tail.gamma < 0 {
 		testWARNING()
+		t.Errorf("Bad fitted gamma, expected 0., got %f", tail.gamma)
 	} else {
 		testOK()
 	}
 
 	checkTitle("Checking tail fit (uniform)...")
+	tail = NewTail(-1)
 	data = uniformSample(N)
 	sort.Float64s(data)
+
 	for i := N - Nt; i < N; i++ {
 		tail.AddExcess(data[i] - data[N-Nt-1])
 	}
@@ -54,6 +58,7 @@ func TestCdf(t *testing.T) {
 	} else {
 		testOK()
 	}
+
 }
 
 func TestQuantile(t *testing.T) {
