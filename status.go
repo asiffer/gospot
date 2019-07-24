@@ -3,8 +3,10 @@
 package gospot
 
 import (
+	"encoding/json"
 	"fmt"
 	"math"
+	"reflect"
 )
 
 // SpotStatus is the structure embedding the status of a Spot instance
@@ -76,4 +78,50 @@ func (dss DSpotStatus) String() string {
 		"t_down", dss.TDown,
 		"z_up", dss.ZUp,
 		"z_down", dss.ZDown)
+}
+
+// PreMarshalWithNaN prepares to marshal a structure sending a map
+// removing the NaN field/value
+func PreMarshalWithNaN(x interface{}) map[string]interface{} {
+	// pointer to struct - addressable
+	v := reflect.ValueOf(x)
+	t := v.Type()
+
+	m := make(map[string]interface{})
+	// var field string
+
+	for i := 0; i < v.NumField(); i++ {
+		value := v.Field(i).Interface()
+
+		field, exists := t.Field(i).Tag.Lookup("json")
+		if !exists {
+			field = t.Field(i).Name
+		}
+
+		switch value.(type) {
+		case float64:
+			if f, ok := value.(float64); !math.IsNaN(f) && ok {
+				m[field] = value
+			}
+		default:
+			m[field] = value
+		}
+	}
+	return m
+}
+
+// MarshalJSON is the method required to implement the Marshaler interface.
+// Marshaler is the interface implemented by types that can marshal
+// themselves into valid JSON.
+func (ss SpotStatus) MarshalJSON() ([]byte, error) {
+	return json.Marshal(PreMarshalWithNaN(ss))
+}
+
+// MarshalJSON is the method required to implement the Marshaler interface.
+// Marshaler is the interface implemented by types that can marshal
+// themselves into valid JSON.
+func (dss DSpotStatus) MarshalJSON() ([]byte, error) {
+	m := PreMarshalWithNaN(dss.SpotStatus)
+	m["drift"] = dss.Mean
+	return json.Marshal(m)
 }
