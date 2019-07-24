@@ -30,7 +30,7 @@ type SpotConfig struct {
 type DSpotConfig struct {
 	SpotConfig
 	// Depth is the size of the underlying moving average
-	Depth int
+	Depth int `json:"depth"`
 }
 
 func (sc SpotConfig) String() string {

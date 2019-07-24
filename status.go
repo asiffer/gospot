@@ -54,7 +54,7 @@ func NewSpotStatus() *SpotStatus {
 type DSpotStatus struct {
 	SpotStatus
 	// Mean is the the value of the current local model
-	Mean float64
+	Mean float64 `json:"drift"`
 }
 
 func (ss SpotStatus) String() string {
