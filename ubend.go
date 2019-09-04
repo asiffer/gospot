@@ -83,11 +83,20 @@ func (u *Ubend) Cancel() {
 			u.m -= old
 			u.m2 -= old * old
 		} else {
+			// data to re-add
 			old := u.lastErasedData
-			u.m -= old
-			u.m2 -= old * old
+			// backstep
 			u.id = (u.size + u.id - 1) % u.size
-			u.Push(old)
+			// data to remove
+			remove := u.data[u.id]
+			// fmt.Printf("Id: %d, Remove: %f, Old: %f\n", u.id, remove, old)
+			// Update
+			u.m = u.m - remove + old
+			// u.m -= old
+			u.m2 = u.m2 - remove*remove + old*old
+			// step forward
+			u.id = (u.id + 1) % u.size
+			// u.Push(old)
 		}
 	}
 }

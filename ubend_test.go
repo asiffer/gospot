@@ -168,20 +168,34 @@ func TestUbendCancel(t *testing.T) {
 	title("Testing Ubend cancel")
 
 	size := 10
-	val := 1.0
+	// val := 1.0
 	ubend := NewUbend(size)
 
-	for i := 0; i < size-1; i++ {
-		ubend.Push(val)
+	for i := 0; i < size+1; i++ {
+		ubend.Push(float64(i))
+	}
+	checkTitle("Checking sum before pushing...")
+	if ubend.m != 55. {
+		testERROR()
+		t.Errorf("Expected 55., got %f", ubend.m)
+	} else {
+		testOK()
 	}
 
 	ubend.Push(17)
-	ubend.Cancel()
-
-	checkTitle("Checking sum...")
-	if ubend.m != 9. {
+	checkTitle("Checking sum before cancelling...")
+	if ubend.m != 71. {
 		testERROR()
-		t.Errorf("Expected 9., got %f", ubend.m)
+		t.Errorf("Expected 62., got %f", ubend.m)
+	} else {
+		testOK()
+	}
+
+	ubend.Cancel()
+	checkTitle("Checking sum...")
+	if ubend.m != 55. {
+		testERROR()
+		t.Errorf("Expected 55., got %f", ubend.m)
 	} else {
 		testOK()
 	}
