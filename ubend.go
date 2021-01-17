@@ -14,6 +14,7 @@ type Ubend struct {
 	m              float64
 	m2             float64
 	id             int
+	length         int
 	size           int
 	lastErasedData float64
 }
@@ -25,6 +26,7 @@ func NewUbend(size int) *Ubend {
 		m:              0.0,
 		m2:             0.0,
 		id:             0,
+		length:         0,
 		size:           size,
 		lastErasedData: math.NaN()}
 }
@@ -32,7 +34,7 @@ func NewUbend(size int) *Ubend {
 // Length returns the current number of data in the container
 func (u *Ubend) Length() int {
 	// fmt.Println(len(u.data))
-	return len(u.data)
+	return u.length
 }
 
 // Size return the capacity of the container, that is to say
@@ -47,6 +49,7 @@ func (u *Ubend) Clear() {
 	u.m = 0.0
 	u.m2 = 0.0
 	u.id = 0
+	u.length = 0
 }
 
 // Push add a new data to the container. It updates the
@@ -54,6 +57,7 @@ func (u *Ubend) Clear() {
 func (u *Ubend) Push(x float64) {
 	if u.Length() < u.Size() || u.Size() <= 0 {
 		u.data = append(u.data, x)
+		u.length++
 		// update moment
 		u.m += x
 		u.m2 += x * x
@@ -80,6 +84,7 @@ func (u *Ubend) Cancel() {
 		if math.IsNaN(u.lastErasedData) {
 			old := u.data[u.Length()-1]
 			u.data = u.data[:u.Length()-1]
+			u.length--
 			u.m -= old
 			u.m2 -= old * old
 		} else {
