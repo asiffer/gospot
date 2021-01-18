@@ -201,3 +201,25 @@ func TestUbendCancel(t *testing.T) {
 	}
 
 }
+
+func TestRace(t *testing.T) {
+	title("Testing race condition")
+
+	n := 10000
+	ubend := NewUbend(n)
+
+	go func() {
+		for i := 0; i < n; i++ {
+			ubend.Push(float64(i))
+		}
+		ubend.Cancel()
+		for i := 0; i < n; i++ {
+			ubend.Push(float64(i))
+		}
+		ubend.Clear()
+	}()
+
+	for i := 0; i < 4*n; i++ {
+		ubend.Push(float64(n))
+	}
+}

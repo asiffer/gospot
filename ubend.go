@@ -4,6 +4,7 @@ package gospot
 
 import (
 	"math"
+	"sync"
 )
 
 // Ubend is a circular container of a given size. It appends
@@ -17,6 +18,7 @@ type Ubend struct {
 	length         int
 	size           int
 	lastErasedData float64
+	mutex          sync.Mutex
 }
 
 // NewUbend creates a new Ubend structure.
@@ -28,7 +30,8 @@ func NewUbend(size int) *Ubend {
 		id:             0,
 		length:         0,
 		size:           size,
-		lastErasedData: math.NaN()}
+		lastErasedData: math.NaN(),
+		mutex:          sync.Mutex{}}
 }
 
 // Length returns the current number of data in the container
@@ -45,6 +48,8 @@ func (u *Ubend) Size() int {
 
 // Clear resets the container. It keeps the original size.
 func (u *Ubend) Clear() {
+	u.mutex.Lock()
+	defer u.mutex.Unlock()
 	u.data = make([]float64, 0)
 	u.m = 0.0
 	u.m2 = 0.0
@@ -55,6 +60,8 @@ func (u *Ubend) Clear() {
 // Push add a new data to the container. It updates the
 // basic moments.
 func (u *Ubend) Push(x float64) {
+	u.mutex.Lock()
+	defer u.mutex.Unlock()
 	if u.Length() < u.Size() || u.Size() <= 0 {
 		u.data = append(u.data, x)
 		u.length++
@@ -80,6 +87,8 @@ func (u *Ubend) Push(x float64) {
 // Warning: you can cancel only one push. If you try more
 // the container will be corrupted.
 func (u *Ubend) Cancel() {
+	u.mutex.Lock()
+	defer u.mutex.Unlock()
 	if u.Length() > 0 {
 		if math.IsNaN(u.lastErasedData) {
 			old := u.data[u.Length()-1]
@@ -109,6 +118,8 @@ func (u *Ubend) Cancel() {
 // IsFull returns whether the container is full (cruising regime)
 // or not (transitory regime).
 func (u *Ubend) IsFull() bool {
+	u.mutex.Lock()
+	defer u.mutex.Unlock()
 	return u.Size() == u.Length() || u.Size() <= 0
 }
 
@@ -118,12 +129,16 @@ func (u *Ubend) Mean() float64 {
 	if u.Size() == 0 {
 		return 0.0
 	}
+	u.mutex.Lock()
+	defer u.mutex.Unlock()
 	return u.m / float64(u.Length())
 }
 
 // MeanSquare computes the mean of the square of
 // the current data of the container
 func (u *Ubend) MeanSquare() float64 {
+	u.mutex.Lock()
+	defer u.mutex.Unlock()
 	return u.m2 / float64(u.Length())
 }
 
