@@ -6,8 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"math"
-
-	"gonum.org/v1/gonum/optimize"
 )
 
 var (
@@ -298,15 +296,15 @@ func Bisection(f ObjectiveFunction, args interface{}, x1, x2, tol float64) (floa
 }
 
 // BFGS uses the BFGS algorithm to find the minimum of a function
-func BFGS(f ObjectiveFunction, args interface{}, x0 float64) (float64, float64, int, error) {
-	p := optimize.Problem{
-		Func: func(x []float64) float64 {
-			return f(x[0], args)
-		},
-	}
-	s := optimize.Settings{
-		FuncEvaluations: MaxFunEval,
-	}
-	result, err := optimize.Minimize(p, []float64{x0}, &s, nil)
-	return result.X[0], result.F, result.Stats.FuncEvaluations, err
-}
+// func BFGS(f ObjectiveFunction, args interface{}, x0 float64) (float64, float64, int, error) {
+// 	p := optimize.Problem{
+// 		Func: func(x []float64) float64 {
+// 			return f(x[0], args)
+// 		},
+// 	}
+// 	s := optimize.Settings{
+// 		FuncEvaluations: MaxFunEval,
+// 	}
+// 	result, err := optimize.Minimize(p, []float64{x0}, &s, nil)
+// 	return result.X[0], result.F, result.Stats.FuncEvaluations, err
+// }

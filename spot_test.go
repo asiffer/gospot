@@ -140,3 +140,32 @@ func TestSpotProbabilityComputation(t *testing.T) {
 		testERROR()
 	}
 }
+
+func BenchmarkF(b *testing.B) {
+	config := SpotConfig{
+		Q:         1e-4,
+		Ninit:     2000,
+		Level:     0.98,
+		Up:        true,
+		Down:      true,
+		Alert:     true,
+		Bounded:   true,
+		MaxExcess: 200}
+
+	N := 20000000
+	exp := make([][]float64, b.N)
+	for k := 0; k < b.N; k++ {
+		exp[k] = standardGaussianSample(N)
+	}
+	// data := standardGaussianSample(N)
+
+	b.ResetTimer()
+	for k := 0; k < b.N; k++ {
+		spot := NewSpotFromConfig(&config)
+
+		for i := 0; i < N; i++ {
+			spot.Step(exp[k][i])
+		}
+	}
+
+}
