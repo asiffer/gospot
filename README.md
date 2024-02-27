@@ -19,65 +19,42 @@ $ go get github.com/asiffer/gospot
 Once `gospot` is imported, you can create a `Spot` object and feed some data.
 
 ```golang
-// example.go
-
+// example/main.go
 package main
 
 import (
-    "fmt"
-    "math/rand"
-    "time"
+	"math/rand"
 
-    "github.com/asiffer/gospot"
+	"github.com/asiffer/gospot"
 )
 
-func gaussianSample(N int) []float64 {
-	rand.Seed(time.Now().UTC().UnixNano())
-	data := make([]float64, N)
-	for i := 0; i < N; i++ {
-		data[i] = rand.NormFloat64()
+func gaussian(size uint64) []float64 {
+	out := make([]float64, size)
+	for i := uint64(0); i < size; i++ {
+		out[i] = rand.NormFloat64()
 	}
-	return data
+	return out
 }
 
 func main() {
-    config := gospot.SpotConfig{
-		Q:         1e-4,
-		Ninit:     5000,
-		Level:     0.99,
-		Up:        true,
-		Down:      true,
-		Alert:     false,
-		Bounded:   true,
-		MaxExcess: 200}
+	s, _ := gospot.NewSpot(1e-5, false, true, 0.99, 2000)
+	data := gaussian(10000)
+	s.Fit(data)
 
-    spot := gospot.NewSpotFromConfig(config)
+	A := 0
+	E := 0
+	N := 0
 
-    N := 80000
-    data := gaussianSample(N)
-
-    for i := 0; i < N; i++ {
-	    spot.Step(data[i])
-    }
-
-    fmt.Println(spot.Status())
+	for _, x := range gaussian(1000000) {
+		switch s.Step(x) {
+		case gospot.ANOMALY:
+			A++
+		case gospot.EXCESS:
+			E++
+		default:
+			N++
+		}
+	}
 }
-```
-
-This example outputs the status of the Spot instance after 80000 gaussian observations. Here the `alert` mode is not activated, so no alarm is raised.
-
-```shell
-$ go run example.go
-       n 80000
-   ex_up 200
- ex_down 200
-   Nt_up 816
- Nt_down 774
-   al_up 0
- al_down 0
-    t_up 2.317529
-  t_down -2.352898
-    z_up 3.834334
-  z_down -3.831503
 
 ```
