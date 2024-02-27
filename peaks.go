@@ -4,14 +4,21 @@ import (
 	"math"
 )
 
+// Peaks is a stucture that computes stats about the provided excesses
 type Peaks struct {
-	E         float64 `json:"e"`
-	E2        float64 `json:"e2"`
-	Min       float64 `json:"min"`
-	Max       float64 `json:"max"`
-	Container *Ubend  `json:"container"`
+	// Sum of the elements
+	E float64 `json:"e"`
+	// Sum of the square of the elements
+	E2 float64 `json:"e2"`
+	// Minimum of the elements
+	Min float64 `json:"min"`
+	// Maximum of the elements
+	Max float64 `json:"max"`
+	// Underlying data container
+	Container *Ubend `json:"container"`
 }
 
+// NewPeaks initializes a new [Peak] structure
 func NewPeaks(size uint64) *Peaks {
 	return &Peaks{
 		E:         0.0,
@@ -45,10 +52,12 @@ func (peaks *Peaks) updateStats() uint64 {
 	return maxIteration
 }
 
+// Size returns the current number of peaks
 func (peaks *Peaks) Size() uint64 {
 	return peaks.Container.Size()
 }
 
+// Push a new data to the peaks
 func (peaks *Peaks) Push(x float64) {
 	erased := peaks.Container.Push(x)
 	size := peaks.Size()
@@ -72,16 +81,19 @@ func (peaks *Peaks) Push(x float64) {
 	}
 }
 
+// Mean computes the mean of the peaks
 func (peaks *Peaks) Mean() float64 {
 	return peaks.E / float64(peaks.Size())
 }
 
+// Var computes the variance of the peaks
 func (peaks *Peaks) Var() float64 {
 	size := float64(peaks.Size())
 	mean := peaks.E / size
 	return (peaks.E2 / size) - (mean * mean)
 }
 
+// LogLikelihood computes the log-likelihood of the peaks against a GPD(gamma, sigma) distribution
 func (peaks *Peaks) LogLikelihood(gamma, sigma float64) float64 {
 	NtLocal := peaks.Size()
 	Nt := float64(NtLocal)

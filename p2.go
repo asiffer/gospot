@@ -109,17 +109,17 @@ func sign(d float64) float64 {
 	}
 }
 
-// linear calculates the linear interpolation
+// linear computes the linear interpolation
 func (p2 *P2) linear(i int, d int) float64 {
 	return p2.q[i] + float64(d)*(p2.q[i+d]-p2.q[i])/(p2.n[i+d]-p2.n[i])
 }
 
-// parabolic calculates the parabolic interpolation
+// parabolic computes the parabolic interpolation
 func (p2 *P2) parabolic(i int, d int) float64 {
 	return p2.q[i] + (float64(d)/(p2.n[i+1]-p2.n[i-1]))*((p2.n[i]-p2.n[i-1]+float64(d))*(p2.q[i+1]-p2.q[i])/(p2.n[i+1]-p2.n[i])+(p2.n[i+1]-p2.n[i]-float64(d))*(p2.q[i]-p2.q[i-1])/(p2.n[i]-p2.n[i-1]))
 }
 
-// quantile calculates the P2 quantile
+// quantile computes the P2 quantile
 func (p2 *P2) quantile(x []float64) float64 {
 	size := len(x)
 	if size < 5 {
@@ -174,7 +174,7 @@ func (p2 *P2) quantile(x []float64) float64 {
 	return p2.q[2]
 }
 
-// P2Quantile calculates the P2 quantile of the given data with the specified p value
+// P2Quantile computes the P2 quantile of the given data with the specified p value
 func P2Quantile(p float64, data []float64) float64 {
 	p2 := NewP2()
 	p2.Init(p)

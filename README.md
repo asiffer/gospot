@@ -1,7 +1,12 @@
-# gospot ![Build](https://github.com/asiffer/gospot/workflows/Build/badge.svg) ![Test](https://github.com/asiffer/gospot/workflows/Test/badge.svg) [![Go Report Card](https://goreportcard.com/badge/github.com/asiffer/gospot)](https://goreportcard.com/report/github.com/asiffer/gospot) [![Coverage Status](https://codecov.io/github/asiffer/gospot/coverage.svg?branch=master)](https://codecov.io/github/asiffer/gospot?branch=master) [![GoDoc](https://godoc.org/github.com/asiffer/gospot?status.svg)](https://godoc.org/github.com/asiffer/gospot) 
+# gospot
 
-`gospot` does not provide `Go` bindings to [libspot](https://asiffer.github.io/libspot/) anymore. It is merely a pure golang implementation of `libspot`.
+![Test](https://github.com/asiffer/gospot/workflows/Test/badge.svg)
+[![Go Report Card](https://goreportcard.com/badge/github.com/asiffer/gospot)](https://goreportcard.com/report/github.com/asiffer/gospot)
+[![Coverage Status](https://codecov.io/github/asiffer/gospot/coverage.svg?branch=master)](https://codecov.io/github/asiffer/gospot?branch=master)
+[![GoDoc](https://godoc.org/github.com/asiffer/gospot?status.svg)](https://godoc.org/github.com/asiffer/gospot)
 
+`gospot` is a pure golang implementation of [libspot](https://asiffer.github.io/libspot/).
+This module roughly follows the same structure.
 
 ## Download
 
@@ -47,18 +52,17 @@ func main() {
 		MaxExcess: 200}
 
     spot := gospot.NewSpotFromConfig(config)
-    
+
     N := 80000
     data := gaussianSample(N)
 
     for i := 0; i < N; i++ {
 	    spot.Step(data[i])
     }
-    
+
     fmt.Println(spot.Status())
 }
 ```
-
 
 This example outputs the status of the Spot instance after 80000 gaussian observations. Here the `alert` mode is not activated, so no alarm is raised.
 

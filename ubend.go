@@ -5,13 +5,19 @@ import (
 )
 
 type Ubend struct {
-	Cursor         uint64    `json:"cursor"`
-	Capacity       uint64    `json:"capacity"`
-	LastErasedData float64   `json:"last_erased_data"`
-	Filled         bool      `json:"filled"`
-	Data           []float64 `json:"data"`
+	// Current position inside the container
+	Cursor uint64 `json:"cursor"`
+	// Max storage
+	Capacity uint64 `json:"capacity"`
+	// Last erased value (i.e. replaced by a new one)
+	LastErasedData float64 `json:"last_erased_data"`
+	// Container fill status
+	Filled bool `json:"filled"`
+	// Data container
+	Data []float64 `json:"data"`
 }
 
+// NewUbend initializes a new [Ubend] structure given a max capacity
 func NewUbend(capacity uint64) *Ubend {
 	return &Ubend{
 		Cursor:         0,
@@ -22,6 +28,7 @@ func NewUbend(capacity uint64) *Ubend {
 	}
 }
 
+// Size returns the current size of the container
 func (ubend *Ubend) Size() uint64 {
 	if ubend.Filled {
 		return ubend.Capacity
@@ -29,6 +36,7 @@ func (ubend *Ubend) Size() uint64 {
 	return ubend.Cursor
 }
 
+// Push a new value to the container and returns the erased one (or NaN if it does not exist)
 func (ubend *Ubend) Push(x float64) float64 {
 	if ubend.Filled {
 		ubend.LastErasedData = ubend.Data[ubend.Cursor]

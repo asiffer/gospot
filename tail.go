@@ -5,11 +5,15 @@ import (
 )
 
 type Tail struct {
+	// GPD gamma parameter
 	Gamma float64 `json:"gamma"`
+	// GPD sigma parameter
 	Sigma float64 `json:"sigma"`
-	Peaks *Peaks  `json:"peaks"`
+	// Underlyning Peaks structure
+	Peaks *Peaks `json:"peaks"`
 }
 
+// NewTail initializes a new GPD tail
 func NewTail(size uint64) *Tail {
 	return &Tail{
 		Gamma: 0.0,
@@ -18,6 +22,7 @@ func NewTail(size uint64) *Tail {
 	}
 }
 
+// Push adds a new data in the tail
 func (tail *Tail) Push(x float64) {
 	tail.Peaks.Push(x)
 }
@@ -40,6 +45,7 @@ func (tail *Tail) Quantile(s, q float64) float64 {
 	return (tail.Sigma / tail.Gamma) * (math.Pow(r, -tail.Gamma) - 1)
 }
 
+// Fit the tail against the pushed data
 func (tail *Tail) Fit() float64 {
 	maxLLhood := math.NaN()
 

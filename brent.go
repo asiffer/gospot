@@ -18,6 +18,7 @@ func fabs(a float64) float64 {
 
 type RealFunction func(float64, interface{}) float64
 
+// Brent implements the Brent's algorithm to find root of real function
 func Brent(x1, x2 float64, f RealFunction, extra interface{}, tol float64) (float64, bool) {
 	// Assume we found the root
 	// It will be set to zero in error cases

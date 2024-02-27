@@ -6,6 +6,7 @@ import (
 
 type Estimator func() (float64, float64, float64)
 
+// MomEstimator computes the 'Method of Moments' estimator for a GPD distribution
 func (peaks *Peaks) MomEstimator() (gamma, sigma float64, llhood float64) {
 	E := peaks.Mean()
 	V := peaks.Var()
@@ -51,14 +52,11 @@ func (peaks *Peaks) grimshawSimplifiedLogLikelihood(xStar float64) (gamma, sigma
 	return gamma, sigma, peaks.LogLikelihood(gamma, sigma)
 }
 
+// Grimshaw computes the Grimshaw's estimator for a GPD distribution
 func (peaks *Peaks) GrimshawEstimator() (float64, float64, float64) {
 	mini := peaks.Min
 	maxi := peaks.Max
 	mean := peaks.Mean()
-
-	// gamma := 0.0
-	// sigma := 1.0
-	// maxLLhood := math.Inf(-1)
 
 	// 0 is always root
 	gamma, sigma, maxLLhood := peaks.grimshawSimplifiedLogLikelihood(0.0)
@@ -68,9 +66,6 @@ func (peaks *Peaks) GrimshawEstimator() (float64, float64, float64) {
 
 	leftRoot, _ := Brent(a, b, grimshawW, peaks, BrentDefaultEpsilon)
 	rightRoot, _ := Brent(epsilon, 2.0*(mean-mini)/(mini*mini), grimshawW, peaks, BrentDefaultEpsilon)
-
-	// fmt.Println(mini, maxi, mean, a, b, epsilon, 2.0*(mean-mini)/(mini*mini))
-	// fmt.Println("Grimshaw:", leftRoot, rightRoot)
 
 	if !math.IsNaN(leftRoot) {
 		g, s, ll := peaks.grimshawSimplifiedLogLikelihood(leftRoot)
@@ -85,6 +80,5 @@ func (peaks *Peaks) GrimshawEstimator() (float64, float64, float64) {
 		}
 	}
 
-	// fmt.Println("Grimshaw:", gamma, sigma, maxLLhood)
 	return gamma, sigma, maxLLhood
 }
