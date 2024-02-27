@@ -1,222 +1,129 @@
-// spot.go
-
 package gospot
 
 import (
+	"fmt"
 	"math"
-	"sort"
 )
+
+type SpotStatus int
 
 const (
-	// Normal refers to normal data
-	Normal = 0
-	// AlertUp refers to an upper anomaly
-	AlertUp = 1
-	// AlertDown refers to lower anomaly
-	AlertDown = -1
-	// ExcessUp refers to a data used to the upper tail fit
-	ExcessUp = 2
-	// ExcessDown refers to a data used to the lower tail fit
-	ExcessDown = -2
-	// InitBatch refers to a data stored in the initial batch (before calibration)
-	InitBatch = 3
-	// Calibration refers to the last InitBatch data (the calibration step is performed)
-	Calibration = 4
-	// NormalizerError is used in DSpot when something bad occured during normalization
-	NormalizerError = 5
+	INTERNAL_ERROR SpotStatus = iota - 1
+	NORMAL
+	EXCESS
+	ANOMALY
 )
 
-// Spot This object embeds a pointer to a C++ object Spot
+// Spot represents a Spot structure
 type Spot struct {
-	config *SpotConfig
-	status *SpotStatus
-	up     *Tail
-	down   *Tail
-	tmp    []float64
+	Q                float64 `json:"q"`
+	Low              bool    `json:"low"`
+	DiscardAnomalies bool    `json:"discard_anomalies"`
+	Level            float64 `json:"level"`
+	Nt               int     `json:"Nt"`
+	N                uint64  `json:"n"`
+	Tail             *Tail   `json:"tail"`
+	AnomalyThreshold float64 `json:"anomaly_threshold"`
+	ExcessThreshold  float64 `json:"excess_threshold"`
 }
 
-// NewSpotFromConfig creates from a SpotConfig structure
-func NewSpotFromConfig(conf *SpotConfig) *Spot {
+// NewSpot initializes a new Spot structure
+func NewSpot(q float64, low bool, discardAnomalies bool, level float64, maxExcess uint64) (*Spot, error) {
+	if level < 0.0 || level >= 1.0 {
+		return nil, fmt.Errorf("level must be in [0, 1)")
+	}
+	if q >= (1.0-level) || q <= 0.0 {
+		return nil, fmt.Errorf("q must be in (0, 1-level)")
+	}
+
 	return &Spot{
-		config: conf,
-		status: NewSpotStatus(),
-		up:     NewTail(conf.MaxExcess),
-		down:   NewTail(conf.MaxExcess),
-		tmp:    make([]float64, 0),
-	}
+		Q:                q,
+		Level:            level,
+		Low:              low,
+		DiscardAnomalies: discardAnomalies,
+		Nt:               0,
+		N:                0,
+		Tail:             NewTail(maxExcess),
+		AnomalyThreshold: math.NaN(),
+		ExcessThreshold:  math.NaN(),
+	}, nil
+
 }
 
-// NewDefaultSpot is the default Spot constructor
-func NewDefaultSpot() *Spot {
-	return NewSpotFromConfig(&DefaultSpotConfig)
+func (spot *Spot) upDown() float64 {
+	if spot.Low {
+		return -1.0
+	}
+	return 1.0
 }
 
-func (s *Spot) calibrate() {
-	sort.Float64s(s.tmp)
+// Fit calculates the excess thresholds
+func (spot *Spot) Fit(data []float64) error {
+	spot.Nt = 0
+	spot.N = uint64(len(data))
 
-	if s.config.Up {
-		// retrieve the upper t threshold
-		indexUp := int(s.config.Level * float64(s.config.Ninit))
-		s.status.TUp = s.tmp[indexUp-1]
-
-		// feed the tail with the excesses
-		for _, ex := range s.tmp[indexUp:] {
-			s.status.NtUp++
-			s.up.AddExcess(ex - s.status.TUp)
-		}
-		// upperTail fit
-		s.up.Fit()
-		s.updateUpThreshold()
+	var et float64
+	if spot.Low {
+		et = P2Quantile(1.0-spot.Level, data)
+	} else {
+		et = P2Quantile(spot.Level, data)
 	}
-
-	if s.config.Down {
-		// retrieve the lower t threshold
-		indexDown := int((1. - s.config.Level) * float64(s.config.Ninit))
-		s.status.TDown = s.tmp[indexDown]
-
-		// feed the tail with the excesses
-		for _, ex := range s.tmp[:indexDown] {
-			s.status.NtDown++
-			s.down.AddExcess(s.status.TDown - ex)
-		}
-
-		// upperTail fit
-		s.down.Fit()
-		s.updateDownThreshold()
+	if math.IsNaN(et) {
+		return fmt.Errorf("excess threshold is NaN")
 	}
-}
+	spot.ExcessThreshold = et
 
-func (s *Spot) updateUpThreshold() {
-	s.status.ExUp = s.up.ubend.Length()
-	s.status.ZUp = s.up.Quantile(
-		s.config.Q,
-		s.status.TUp,
-		s.status.N,
-		s.status.NtUp,
-	)
-}
-
-func (s *Spot) updateDownThreshold() {
-	s.status.ExDown = s.down.ubend.Length()
-	s.status.ZDown = 2*s.status.TDown - s.down.Quantile(
-		s.config.Q,
-		s.status.TDown,
-		s.status.N,
-		s.status.NtDown,
-	)
-}
-
-// Step performs one Spot step (it analyzes the input data)
-func (s *Spot) Step(x float64) int {
-	if len(s.tmp) == s.config.Ninit-1 {
-		// last init batch data + calibration
-		s.tmp = append(s.tmp, x)
-		s.status.N++
-		s.calibrate()
-		return Calibration
-	}
-	if len(s.tmp) < s.config.Ninit {
-		// init batch data
-		s.status.N++
-		s.tmp = append(s.tmp, x)
-		return InitBatch
-	}
-	if s.config.Up {
-		// Up Alert
-		if s.config.Alert && x > s.status.ZUp {
-			s.status.AlUp++
-			return AlertUp
-		}
-		// Up Excess
-		if x > s.status.TUp {
-			s.up.AddExcess(x - s.status.TUp)
-			s.up.Fit()
-			s.updateUpThreshold()
-			s.status.NtUp++
-			s.status.N++
-			return ExcessUp
-		}
-	}
-	if s.config.Down {
-		// Down alert
-		if s.config.Alert && x < s.status.ZDown {
-			s.status.AlDown++
-			return AlertDown
-		}
-		// Down excess
-		if x < s.status.TDown {
-			s.down.AddExcess(s.status.TDown - x)
-			s.down.Fit()
-			s.updateDownThreshold()
-			s.status.NtDown++
-			s.status.N++
-			return ExcessDown
+	for _, x := range data {
+		excess := spot.upDown() * (x - et)
+		if excess > 0 {
+			spot.Nt++
+			spot.Tail.Push(excess)
 		}
 	}
 
-	// Normal data
-	s.status.N++
-	return Normal
-}
+	spot.Tail.Fit()
 
-// GetUpperT Returns the upper threshold t
-func (s *Spot) GetUpperT() float64 {
-	return s.status.TUp
-}
-
-// GetLowerT Returns the lower threshold t
-func (s *Spot) GetLowerT() float64 {
-	return s.status.TDown
-}
-
-// GetUpperThreshold returns the upper decision threshold
-func (s *Spot) GetUpperThreshold() float64 {
-	return s.status.ZUp
-}
-
-// GetLowerThreshold returns the lower decision threshold
-func (s *Spot) GetLowerThreshold() float64 {
-	return s.status.ZDown
-}
-
-// SetQ Change the value of the decision probability.
-// It then changes the decision thresholds
-func (s *Spot) SetQ(q float64) {
-	s.config.Q = q
-}
-
-// UpProbability Given a quantile z, computes the probability
-// to observe a value greater than z
-func (s *Spot) UpProbability(z float64) float64 {
-	if s.config.Up {
-		return s.up.Cdf(
-			z,
-			s.status.TUp,
-			s.status.N,
-			s.status.NtUp)
+	spot.AnomalyThreshold = spot.Quantile(spot.Q)
+	if math.IsNaN(spot.AnomalyThreshold) {
+		return fmt.Errorf("anomaly threshold is NaN")
 	}
-	return math.NaN()
+
+	return nil
 }
 
-// DownProbability Given a quantile z, computes the probability
-// to observe a value lower than z
-func (s *Spot) DownProbability(z float64) float64 {
-	if s.config.Down {
-		return s.down.Cdf(
-			2*s.status.TDown-z,
-			s.status.TDown,
-			s.status.N,
-			s.status.NtDown)
+// Step updates Spot with a new value
+func (spot *Spot) Step(x float64) SpotStatus {
+	if math.IsNaN(x) {
+		return INTERNAL_ERROR
 	}
-	return math.NaN()
+
+	// flag anomaly
+	if spot.DiscardAnomalies && spot.upDown()*(x-spot.AnomalyThreshold) > 0 {
+		return ANOMALY
+	}
+
+	spot.N++
+
+	ex := spot.upDown() * (x - spot.ExcessThreshold)
+	if ex >= 0.0 {
+		spot.Nt++
+		spot.Tail.Push(ex)
+		spot.Tail.Fit()
+		spot.AnomalyThreshold = spot.Quantile(spot.Q)
+		return EXCESS
+	}
+
+	return NORMAL
 }
 
-// Status returns the current status of the Spot instance
-func (s *Spot) Status() SpotStatus {
-	return *s.status
+// Quantile calculates the quantile for Spot
+func (spot *Spot) Quantile(q float64) float64 {
+	s := float64(spot.Nt) / float64(spot.N)
+	return spot.ExcessThreshold + spot.upDown()*spot.Tail.Quantile(s, q)
 }
 
-// Config returns the configuration of the Spot instance
-func (s *Spot) Config() SpotConfig {
-	return *s.config
+// Probability calculates the probability for Spot
+func (spot *Spot) Probability(z float64) float64 {
+	s := float64(spot.Nt) / float64(spot.N)
+	return spot.Tail.Probability(s, spot.upDown()*(z-spot.ExcessThreshold))
 }

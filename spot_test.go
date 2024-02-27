@@ -1,5 +1,3 @@
-// spot_test.go
-
 package gospot
 
 import (
@@ -8,164 +6,54 @@ import (
 	"testing"
 )
 
-func TestInitSpot(t *testing.T) {
-	title("Spot")
-	// rand.Seed(time.Now().UnixNano())
-}
-func TestSpotBasicRun(t *testing.T) {
-	checkTitle("Basic run...")
-	spot := NewDefaultSpot()
-	data := standardGaussianSample(8000)
-	for _, x := range data {
-		spot.Step(x)
-	}
-	testOK()
-}
+func testAny(q float64, level float64, maxExcess uint64, generator func(size uint64) []float64) (A, E, N int) {
+	trainingSize := uint64(float64(maxExcess) / (1 - level))
+	testSize := 10 * trainingSize
+	data := generator(trainingSize)
 
-func TestSpotThresholdComputation(t *testing.T) {
-	title("Testing Spot threshold computation")
+	s, _ := NewSpot(1e-5, false, true, level, maxExcess)
+	s.Fit(data)
 
-	sc := SpotConfig{
-		Q:         1e-4,
-		Ninit:     10000,
-		Level:     0.995,
-		Up:        true,
-		Down:      true,
-		Alert:     false,
-		Bounded:   true,
-		MaxExcess: 200}
+	A = 0
+	E = 0
+	N = 0
 
-	spot := NewSpotFromConfig(&sc)
-
-	checkTitle("Checking Q setting...")
-	spot.SetQ(1e-3)
-	if spot.Config().Q != 1e-3 {
-		t.Errorf("Error while setting Q (expected 1e-3, got %f)", spot.Config().Q)
-		testERROR()
-	} else {
-		testOK()
-	}
-
-	// data
-	var N = 12000
-	data := standardGaussianSample(N)
-
-	for i := 0; i < N; i++ {
-		spot.Step(data[i])
-	}
-
-	var zTrue = 3.09
-	relativeError := 100. * math.Abs(zTrue-spot.GetUpperThreshold()) / zTrue
-
-	checkTitle("Checking error...")
-
-	if relativeError > 7.0 {
-		t.Errorf("Expected lower than 7%%, got %.2f%%", relativeError)
-		testERROR()
-		fmt.Println(spot.Status())
-	} else if relativeError > 2.5 {
-		testWARNING()
-	} else {
-		testOK()
-	}
-
-}
-
-func TestSpotProbabilityComputation(t *testing.T) {
-	title("Spot Probability computation")
-
-	config := SpotConfig{
-		Q:         1e-4,
-		Ninit:     10000,
-		Level:     0.999,
-		Up:        true,
-		Down:      true,
-		Alert:     false,
-		Bounded:   true,
-		MaxExcess: 200}
-
-	spot := NewSpotFromConfig(&config)
-	N := config.Ninit
-	data := standardGaussianSample(N)
-
-	for i := 0; i < N; i++ {
-		spot.Step(data[i])
-	}
-
-	checkTitle("Checking Up probability computation...")
-	errUp := math.Abs(spot.UpProbability(3.09)-1e-3) / 1e-3
-	if errUp > 5 {
-		testERROR()
-		t.Errorf("Expected 1e-3, got %f", spot.UpProbability(3.09))
-		fmt.Println(spot.up)
-	} else if errUp > 2.5 {
-		testWARNING()
-	} else {
-		testOK()
-	}
-
-	checkTitle("Checking Down probability computation...")
-	errDown := math.Abs(spot.DownProbability(-3.09)-1e-3) / 1e-3
-	if errDown > 5 {
-		testERROR()
-		t.Errorf("Expected 1e-3, got %f", spot.DownProbability(-3.09))
-		fmt.Println(spot.down)
-	} else if errDown > 2.5 {
-		testWARNING()
-	} else {
-		testOK()
-	}
-
-	config = SpotConfig{
-		Q:         1e-4,
-		Ninit:     10000,
-		Level:     0.999,
-		Up:        false,
-		Down:      false,
-		Alert:     false,
-		Bounded:   true,
-		MaxExcess: 200}
-	spot = NewSpotFromConfig(&config)
-	checkTitle("Checking NaN (Up)...")
-	if math.IsNaN(spot.UpProbability(12.)) && math.IsNaN(spot.GetUpperT()) && math.IsNaN(spot.GetUpperThreshold()) {
-		testOK()
-	} else {
-		testERROR()
-	}
-
-	checkTitle("Checking NaN (Down)...")
-	if math.IsNaN(spot.DownProbability(12.)) && math.IsNaN(spot.GetLowerT()) && math.IsNaN(spot.GetLowerThreshold()) {
-		testOK()
-	} else {
-		testERROR()
-	}
-}
-
-func BenchmarkF(b *testing.B) {
-	config := SpotConfig{
-		Q:         1e-4,
-		Ninit:     2000,
-		Level:     0.98,
-		Up:        true,
-		Down:      true,
-		Alert:     true,
-		Bounded:   true,
-		MaxExcess: 200}
-
-	N := 20000000
-	exp := make([][]float64, b.N)
-	for k := 0; k < b.N; k++ {
-		exp[k] = standardGaussianSample(N)
-	}
-	// data := standardGaussianSample(N)
-
-	b.ResetTimer()
-	for k := 0; k < b.N; k++ {
-		spot := NewSpotFromConfig(&config)
-
-		for i := 0; i < N; i++ {
-			spot.Step(exp[k][i])
+	for _, x := range generator(testSize) {
+		switch s.Step(x) {
+		case ANOMALY:
+			A++
+		case EXCESS:
+			E++
+		default:
+			N++
 		}
 	}
 
+	return
+}
+
+func TestUniform(t *testing.T) {
+	q := 1e-5
+	level := 0.98
+	maxExcess := uint64(2000)
+
+	A, E, N := testAny(q, level, maxExcess, uniform)
+	r := float64(A) / float64(A+E+N)
+	if math.Abs(r-q) > 2*q {
+		t.Errorf("Anomaly ratio: %E (A:%d, E:%d, N:%d)", r, A, E, N)
+	}
+	fmt.Println(r, q)
+}
+
+func TestGaussian(t *testing.T) {
+	q := 5e-5
+	level := 0.98
+	maxExcess := uint64(2000)
+
+	A, E, N := testAny(q, level, maxExcess, gaussian)
+	r := float64(A) / float64(A+E+N)
+	if math.Abs(r-q) > 2*q {
+		t.Errorf("Anomaly ratio: %E (A:%d, E:%d, N:%d)", r, A, E, N)
+	}
+	fmt.Println(r, q)
 }
