@@ -11,7 +11,7 @@ func testAny(q float64, level float64, maxExcess uint64, generator func(size uin
 	testSize := 10 * trainingSize
 	data := generator(trainingSize)
 
-	s, _ := NewSpot(1e-5, false, true, level, maxExcess)
+	s, _ := NewSpot(q, false, true, level, maxExcess)
 	s.Fit(data)
 
 	A = 0
