@@ -3,6 +3,7 @@ package gospot
 import (
 	"fmt"
 	"math"
+	"math/rand"
 	"testing"
 )
 
@@ -56,4 +57,59 @@ func TestGaussian(t *testing.T) {
 		t.Errorf("Anomaly ratio: %E (A:%d, E:%d, N:%d)", r, A, E, N)
 	}
 	fmt.Println(r, q)
+}
+
+func BenchmarkSpot(b *testing.B) {
+	s, err := NewSpot(1e-5, false, true, 0.99, 2000)
+	if err != nil {
+		panic(err)
+	}
+	data := gaussian(10000)
+	s.Fit(data)
+
+	A := 0
+	E := 0
+	N := 0
+
+	b.ResetTimer()
+	for _, x := range gaussian(uint64(b.N)) {
+		switch s.Step(x) {
+		case ANOMALY:
+			A++
+		case EXCESS:
+			E++
+		default:
+			N++
+		}
+	}
+}
+
+func Example() {
+	s, err := NewSpot(1e-5, false, true, 0.99, 2000)
+	if err != nil {
+		panic(err)
+	}
+	trainingSize := 10_000
+	testingSize := 1_000_000
+	data := make([]float64, trainingSize)
+	for i := 0; i < trainingSize; i++ {
+		data[i] = rand.NormFloat64()
+	}
+	s.Fit(data)
+
+	A := 0
+	E := 0
+	N := 0
+
+	for i := 0; i < testingSize; i++ {
+		x := rand.NormFloat64()
+		switch s.Step(x) {
+		case ANOMALY:
+			A++
+		case EXCESS:
+			E++
+		default:
+			N++
+		}
+	}
 }
