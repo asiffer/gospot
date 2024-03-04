@@ -8,6 +8,10 @@
 `gospot` is a pure golang implementation of [libspot](https://asiffer.github.io/libspot/).
 This module roughly follows the same structure.
 
+> [!CAUTION]
+> The last version (v0.2) includes many breaking changes. If your project cannot be migrated, you can still points to
+> the previous one: `go get github.com/asiffer/gospot@v0.1.1`
+
 ## Download
 
 ```shell
