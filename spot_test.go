@@ -112,4 +112,6 @@ func Example() {
 			N++
 		}
 	}
+
+	fmt.Printf("ANOMALY:%d EXCESS:%d NORMAL:%d\n", A, E, N)
 }

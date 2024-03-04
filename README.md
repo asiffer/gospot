@@ -9,8 +9,7 @@
 This module roughly follows the same structure.
 
 > [!CAUTION]
-> The last version (v0.2) includes many breaking changes. If your project cannot be migrated, you can still points to
-> the previous one: `go get github.com/asiffer/gospot@v0.1.1`
+> The last version (`v0.2`) includes many breaking changes. If your project cannot be migrated, you can still points to the previous one: `go get github.com/asiffer/gospot@v0.1.1`
 
 ## Download
 
@@ -23,7 +22,6 @@ $ go get github.com/asiffer/gospot
 Once `gospot` is imported, you can create a `Spot` object and feed some data.
 
 ```golang
-// example/main.go
 package main
 
 import (
@@ -58,14 +56,14 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	data := gaussianBatch(10000)
+	data := gaussianBatch(10_000)
 	s.Fit(data)
 
 	A := 0
 	E := 0
 	N := 0
 
-	for x := range gaussian(1000000) {
+	for x := range gaussian(1_000_000) {
 		switch s.Step(x) {
 		case gospot.ANOMALY:
 			A++
@@ -75,5 +73,7 @@ func main() {
 			N++
 		}
 	}
+
+	fmt.Printf("ANOMALY:%d EXCESS:%d NORMAL:%d\n", A, E, N)
 }
 ```
