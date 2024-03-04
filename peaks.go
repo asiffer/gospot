@@ -103,12 +103,6 @@ func (peaks *Peaks) LogLikelihood(gamma, sigma float64) float64 {
 	}
 
 	r := -Nt * math.Log(sigma)
-	if gamma == -1.0 {
-		// when gamma is at the limit, we can directly return r since the loop below will
-		// do nothing
-		return r
-	}
-
 	c := 1.0 + 1.0/gamma
 	x := gamma / sigma
 
