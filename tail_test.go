@@ -3,9 +3,18 @@ package gospot
 import (
 	"fmt"
 	"math"
+	"math/rand"
 	"sort"
 	"testing"
 )
+
+func frechet(alpha float64, size uint64) []float64 {
+	out := make([]float64, size)
+	for i := range out {
+		out[i] = math.Pow(-math.Log(rand.Float64()), -1.0/alpha)
+	}
+	return out
+}
 
 func testFit(data []float64, size uint64, check func(float64) bool) bool {
 	tail := NewTail(size)
@@ -20,7 +29,30 @@ func testFit(data []float64, size uint64, check func(float64) bool) bool {
 	}
 
 	tail.Fit()
+	// fmt.Println(tail.Peaks.Container.Size(), tail.Sigma, tail.Gamma)
 	return check(tail.Gamma)
+}
+
+func TestFitFrechet(t *testing.T) {
+	var size uint64 = 1000
+	alpha := 2.0
+	check := func(g float64) bool { return (g < (1/alpha+0.1) && g > (1/alpha-0.1)) }
+
+	N := 50
+	s := 0
+	for i := 0; i < N; i++ {
+		data := frechet(alpha, 100*size)
+		if success := testFit(data, size, check); success {
+			s++
+		}
+	}
+	result := float64(s) / float64(N)
+	if result < 0.80 {
+		t.Errorf("Success rate: %f%%", 100*result)
+	} else {
+		t.Logf("Success rate: %f%%", 100*result)
+	}
+	fmt.Println(result)
 }
 
 func TestFitUniform(t *testing.T) {
@@ -30,7 +62,7 @@ func TestFitUniform(t *testing.T) {
 	N := 50
 	s := 0
 	for i := 0; i < N; i++ {
-		data := uniformX(100*size, 15.)
+		data := uniformX(100*size, 2.0)
 		if success := testFit(data, size, check); success {
 			s++
 		}

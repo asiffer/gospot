@@ -14,6 +14,11 @@ func (peaks *Peaks) MomEstimator() (gamma, sigma float64, llhood float64) {
 
 	gamma = 0.5 * (1.0 - R)
 	sigma = 0.5 * E * (1.0 + R)
+	// when gamma < -1, the GPD is not defined. Maybe we can try with
+	// gamma = -1 and check after the likelihood
+	if gamma < -1.0 {
+		gamma = -1.0
+	}
 	llhood = peaks.LogLikelihood(gamma, sigma)
 	return
 }
