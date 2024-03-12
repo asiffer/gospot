@@ -52,7 +52,7 @@ type Spot struct {
 //     In particular you must have 0 < level < 1-q < 1
 func NewSpot(q float64, low bool, discardAnomalies bool, level float64, maxExcess uint64) (*Spot, error) {
 	if level < 0.0 || level >= 1.0 {
-		return nil, fmt.Errorf("level must be in [0, 1)")
+		return nil, fmt.Errorf("level must be in [0, 1), close to 1")
 	}
 	if q >= (1.0-level) || q <= 0.0 {
 		return nil, fmt.Errorf("q must be in (0, 1-level)")
@@ -69,7 +69,6 @@ func NewSpot(q float64, low bool, discardAnomalies bool, level float64, maxExces
 		AnomalyThreshold: math.NaN(),
 		ExcessThreshold:  math.NaN(),
 	}, nil
-
 }
 
 func (spot *Spot) upDown() float64 {
@@ -77,6 +76,16 @@ func (spot *Spot) upDown() float64 {
 		return -1.0
 	}
 	return 1.0
+}
+
+// Reset puts the Spot object into its initial state (before fitting)
+func (s *Spot) Reset() {
+	maxExcess := uint64(len(s.Tail.Peaks.Container.Data))
+	s.Nt = 0
+	s.N = 0
+	s.Tail = NewTail(maxExcess)
+	s.AnomalyThreshold = math.NaN()
+	s.ExcessThreshold = math.NaN()
 }
 
 // Fit the Spot instance against the given values.
