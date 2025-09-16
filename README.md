@@ -1,7 +1,15 @@
-# gospot ![Build](https://github.com/asiffer/gospot/workflows/Build/badge.svg) ![Test](https://github.com/asiffer/gospot/workflows/Test/badge.svg) [![Go Report Card](https://goreportcard.com/badge/github.com/asiffer/gospot)](https://goreportcard.com/report/github.com/asiffer/gospot) [![Coverage Status](https://codecov.io/github/asiffer/gospot/coverage.svg?branch=master)](https://codecov.io/github/asiffer/gospot?branch=master) [![GoDoc](https://godoc.org/github.com/asiffer/gospot?status.svg)](https://godoc.org/github.com/asiffer/gospot) 
+# gospot
 
-`gospot` does not provide `Go` bindings to [libspot](https://asiffer.github.io/libspot/) anymore. It is merely a pure golang implementation of `libspot`.
+![Test](https://github.com/asiffer/gospot/workflows/Test/badge.svg)
+[![Go Report Card](https://goreportcard.com/badge/github.com/asiffer/gospot)](https://goreportcard.com/report/github.com/asiffer/gospot)
+[![Coverage Status](https://codecov.io/github/asiffer/gospot/coverage.svg?branch=master)](https://codecov.io/github/asiffer/gospot?branch=master)
+[![GoDoc](https://godoc.org/github.com/asiffer/gospot?status.svg)](https://godoc.org/github.com/asiffer/gospot)
 
+`gospot` is a pure golang implementation of [libspot](https://asiffer.github.io/libspot/).
+This module roughly follows the same structure.
+
+> [!CAUTION]
+> The last version (`v0.2`) includes many breaking changes. If your project cannot be migrated, you can still points to the previous one: `go get github.com/asiffer/gospot@v0.1.1`
 
 ## Download
 
@@ -14,66 +22,58 @@ $ go get github.com/asiffer/gospot
 Once `gospot` is imported, you can create a `Spot` object and feed some data.
 
 ```golang
-// example.go
-
 package main
 
 import (
-    "fmt"
-    "math/rand"
-    "time"
+	"math/rand"
 
-    "github.com/asiffer/gospot"
+	"github.com/asiffer/gospot"
 )
 
-func gaussianSample(N int) []float64 {
-	rand.Seed(time.Now().UTC().UnixNano())
-	data := make([]float64, N)
-	for i := 0; i < N; i++ {
-		data[i] = rand.NormFloat64()
+func gaussian(size uint64) <-chan float64 {
+	out := make(chan float64, 1)
+	go func() {
+		for i := uint64(0); i < size; i++ {
+			out <- rand.NormFloat64()
+		}
+		close(out)
+	}()
+	return out
+}
+
+func gaussianBatch(size uint64) []float64 {
+	out := make([]float64, size)
+	k := 0
+	for x := range gaussian(size) {
+		out[k] = x
+		k++
 	}
-	return data
+	return out
 }
 
 func main() {
-    config := gospot.SpotConfig{
-		Q:         1e-4,
-		Ninit:     5000,
-		Level:     0.99,
-		Up:        true,
-		Down:      true,
-		Alert:     false,
-		Bounded:   true,
-		MaxExcess: 200}
+	s, err := gospot.NewSpot(1e-5, false, true, 0.99, 2000)
+	if err != nil {
+		panic(err)
+	}
+	data := gaussianBatch(10_000)
+	s.Fit(data)
 
-    spot := gospot.NewSpotFromConfig(config)
-    
-    N := 80000
-    data := gaussianSample(N)
+	A := 0
+	E := 0
+	N := 0
 
-    for i := 0; i < N; i++ {
-	    spot.Step(data[i])
-    }
-    
-    fmt.Println(spot.Status())
+	for x := range gaussian(1_000_000) {
+		switch s.Step(x) {
+		case gospot.ANOMALY:
+			A++
+		case gospot.EXCESS:
+			E++
+		default:
+			N++
+		}
+	}
+
+	fmt.Printf("ANOMALY:%d EXCESS:%d NORMAL:%d\n", A, E, N)
 }
-```
-
-
-This example outputs the status of the Spot instance after 80000 gaussian observations. Here the `alert` mode is not activated, so no alarm is raised.
-
-```shell
-$ go run example.go
-       n 80000
-   ex_up 200
- ex_down 200
-   Nt_up 816
- Nt_down 774
-   al_up 0
- al_down 0
-    t_up 2.317529
-  t_down -2.352898
-    z_up 3.834334
-  z_down -3.831503
-
 ```
